@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
         // 如果要重置状态，请使用热重启（hot restart）。
         //
         // 这对代码也同样有效，不仅仅是值：大多数代码更改都可以通过热重载来测试。
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
