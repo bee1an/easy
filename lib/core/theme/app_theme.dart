@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// App Theme - Premium Minimal Style
 class AppTheme {
@@ -128,6 +129,12 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         foregroundColor: textPrimary,
         centerTitle: false,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness:
+              Brightness.dark, // Dark icons for light theme
+          statusBarBrightness: Brightness.light, // iOS Dark icons
+        ),
       ),
 
       // Card
@@ -253,6 +260,12 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         foregroundColor: darkTextPrimary,
         centerTitle: false,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness:
+              Brightness.light, // Light icons for dark theme
+          statusBarBrightness: Brightness.dark, // iOS Light icons
+        ),
       ),
 
       // Card
