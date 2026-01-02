@@ -34,6 +34,19 @@ dependencies:
   # 与 CupertinoIcons 类一起使用，可以获取 iOS 风格的图标。
   cupertino_icons: ^1.0.8
 
+  # 本地存储
+  shared_preferences: ^2.3.4
+
+  # 唯一 ID 生成
+  uuid: ^4.5.1
+
+  # 状态管理
+  provider: ^6.1.2
+
+  # 国际化日期格式
+  intl: ^0.20.2
+  google_fonts: ^6.3.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -54,9 +67,8 @@ flutter:
   uses-material-design: true
 
   # 要向应用程序添加静态资源，请添加一个 assets 部分，如下所示：
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/images/
 
   # 图片资源可以引用一个或多个特定分辨率的 "变体"，请参阅：
   # https://flutter.dev/to/resolution-aware-images
