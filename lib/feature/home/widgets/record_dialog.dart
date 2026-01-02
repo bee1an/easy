@@ -3,6 +3,7 @@ import 'package:easy/provider/timer_provider.dart';
 import 'package:easy/model/poop_record.dart';
 import 'package:easy/model/bristol_scale.dart';
 import 'package:easy/core/theme/app_theme.dart';
+import 'package:easy/feature/home/widgets/star_animation.dart';
 
 /// Record Dialog - Premium Minimal Style
 class RecordDialog extends StatefulWidget {
@@ -26,11 +27,21 @@ class _RecordDialogState extends State<RecordDialog> {
   }
 
   void _submit() {
+    // Save record
     widget.timerProvider.saveRecord(
       bristolScale: _selectedScale,
       amount: _selectedAmount,
     );
+
+    // Close dialog first
     Navigator.of(context).pop();
+
+    // Trigger star animation after dialog closes
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        StarFlyAnimation.trigger(context);
+      }
+    });
   }
 
   void _cancel() {
@@ -41,7 +52,7 @@ class _RecordDialogState extends State<RecordDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.cardColor(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -128,6 +139,7 @@ class _RecordDialogState extends State<RecordDialog> {
                   Expanded(
                     flex: 2,
                     child: ElevatedButton(
+                      key: AnimationKeys.saveButtonKey,
                       onPressed: _submit,
                       child: const Text('保存'),
                     ),

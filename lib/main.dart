@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/provider/timer_provider.dart';
+import 'package:easy/provider/theme_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
 
@@ -23,13 +24,20 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => TimerProvider(context.read<PoopProvider>()),
         ),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'Easy',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.build(),
-        initialRoute: AppRouter.home,
-        onGenerateRoute: AppRouter.onGenerateRoute,
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Easy',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.build(),
+            darkTheme: AppTheme.buildDark(),
+            themeMode: themeProvider.mode,
+            initialRoute: AppRouter.home,
+            onGenerateRoute: AppRouter.onGenerateRoute,
+          );
+        },
       ),
     );
   }

@@ -79,9 +79,9 @@ class _RecordItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Row(
         children: [

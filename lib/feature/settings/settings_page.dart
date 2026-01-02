@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:easy/provider/poop_provider.dart';
+import 'package:easy/provider/theme_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
 
@@ -52,6 +53,13 @@ class SettingsPage extends StatelessWidget {
 
               const SizedBox(height: 24),
 
+              // Appearance Section
+              _buildSectionTitle(context, '外观'),
+              const SizedBox(height: 12),
+              _buildThemeToggle(context),
+
+              const SizedBox(height: 24),
+
               // About
               _buildSectionTitle(context, '关于'),
               const SizedBox(height: 12),
@@ -76,9 +84,9 @@ class SettingsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.border),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
       child: Column(
         children: [
@@ -107,7 +115,55 @@ class SettingsPage extends StatelessWidget {
       title,
       style: Theme.of(
         context,
-      ).textTheme.titleSmall?.copyWith(color: AppTheme.textMuted),
+      ).textTheme.titleSmall?.copyWith(color: AppTheme.textMutedColor(context)),
+    );
+  }
+
+  Widget _buildThemeToggle(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardTheme.color,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppTheme.darkBorder
+                  : AppTheme.border,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                themeProvider.isDark
+                    ? Icons.dark_mode_rounded
+                    : Icons.light_mode_rounded,
+                size: 22,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('深色模式', style: Theme.of(context).textTheme.titleSmall),
+                    const SizedBox(height: 2),
+                    Text(
+                      themeProvider.isDark ? '已开启' : '已关闭',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: themeProvider.isDark,
+                onChanged: (_) => themeProvider.toggleTheme(),
+                activeTrackColor: AppTheme.primary,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -119,10 +175,12 @@ class SettingsPage extends StatelessWidget {
     VoidCallback? onTap,
     bool isDestructive = false,
   }) {
-    final color = isDestructive ? AppTheme.error : AppTheme.textPrimary;
+    final color = isDestructive
+        ? AppTheme.error
+        : AppTheme.textPrimaryColor(context);
 
     return Material(
-      color: Colors.white,
+      color: AppTheme.cardColor(context),
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -131,7 +189,7 @@ class SettingsPage extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.border),
+            border: Border.all(color: AppTheme.borderColor(context)),
           ),
           child: Row(
             children: [
@@ -156,7 +214,10 @@ class SettingsPage extends StatelessWidget {
                 ),
               ),
               if (onTap != null)
-                Icon(Icons.chevron_right_rounded, color: AppTheme.textMuted),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppTheme.textMutedColor(context),
+                ),
             ],
           ),
         ),

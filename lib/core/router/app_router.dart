@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:easy/feature/home/home_page.dart';
 import 'package:easy/feature/history/history_page.dart';
 import 'package:easy/feature/settings/settings_page.dart';
+import 'package:easy/feature/splash/splash_screen.dart';
 
 /// App Router Configuration
 class AppRouter {
@@ -14,7 +16,7 @@ class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case home:
-        return _buildRoute(const HomePage());
+        return _buildRoute(const SplashScreen(child: HomePage()), isRoot: true);
       case history:
         return _buildRoute(const HistoryPage());
       case AppRouter.settings:
@@ -24,26 +26,19 @@ class AppRouter {
     }
   }
 
-  static PageRouteBuilder _buildRoute(Widget page) {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position:
-                Tween<Offset>(
-                  begin: const Offset(0.05, 0),
-                  end: Offset.zero,
-                ).animate(
-                  CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                ),
-            child: child,
-          ),
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 200),
-    );
+  static Route<dynamic> _buildRoute(Widget page, {bool isRoot = false}) {
+    if (isRoot) {
+      // No swipe back for root page
+      return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            child,
+        transitionDuration: Duration.zero,
+      );
+    }
+
+    // Use CupertinoPageRoute for swipe-back gesture support
+    return CupertinoPageRoute(builder: (context) => page);
   }
 
   /// Navigate to a named route

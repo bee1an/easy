@@ -18,9 +18,9 @@ class StatsCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppTheme.cardColor(context),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.border),
+            border: Border.all(color: AppTheme.borderColor(context)),
           ),
           child: Row(
             children: [
@@ -32,7 +32,11 @@ class StatsCard extends StatelessWidget {
                   iconColor: AppTheme.accent,
                 ),
               ),
-              Container(width: 1, height: 48, color: AppTheme.divider),
+              Container(
+                width: 1,
+                height: 48,
+                color: AppTheme.dividerColor(context),
+              ),
               Expanded(
                 child: _StatItem(
                   value: todayCount,
@@ -41,7 +45,11 @@ class StatsCard extends StatelessWidget {
                   iconColor: AppTheme.primary,
                 ),
               ),
-              Container(width: 1, height: 48, color: AppTheme.divider),
+              Container(
+                width: 1,
+                height: 48,
+                color: AppTheme.dividerColor(context),
+              ),
               Expanded(
                 child: _StatItem(
                   value: monthCount,

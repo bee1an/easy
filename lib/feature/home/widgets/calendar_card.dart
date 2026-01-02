@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
+import 'package:easy/feature/home/widgets/star_animation.dart';
 import 'package:intl/intl.dart';
 
 /// Calendar Card - Monthly Heatmap Calendar
@@ -53,9 +54,9 @@ class _CalendarCardState extends State<CalendarCard> {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppTheme.cardColor(context),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.border),
+                    border: Border.all(color: AppTheme.borderColor(context)),
                   ),
                   child: Column(
                     children: [
@@ -195,12 +196,28 @@ class _CalendarCardState extends State<CalendarCard> {
             date.day == now.day;
         final isFuture = date.isAfter(now);
 
-        return _CalendarDay(
+        final dayWidget = _CalendarDay(
+          key: isToday ? AnimationKeys.todayCalendarKey : null,
           day: day,
           count: count,
           isToday: isToday,
           isFuture: isFuture,
+          onTap: () => _showDayDetail(context, date, count),
         );
+
+        if (isToday) {
+          return ListenableBuilder(
+            listenable: CalendarWaveAnimation(),
+            builder: (context, child) {
+              return WaveEffect(
+                animate: CalendarWaveAnimation().isAnimating,
+                child: dayWidget,
+              );
+            },
+          );
+        }
+
+        return dayWidget;
       },
     );
   }
@@ -245,6 +262,144 @@ class _CalendarCardState extends State<CalendarCard> {
         return AppTheme.primary;
     }
   }
+
+  void _showDayDetail(BuildContext context, DateTime date, int count) {
+    final dateStr = DateFormat('M月d日', 'zh_CN').format(date);
+    final provider = Provider.of<PoopProvider>(context, listen: false);
+
+    // Get records for this specific day
+    final dayRecords = provider.records.where((r) {
+      return r.startTime.year == date.year &&
+          r.startTime.month == date.month &&
+          r.startTime.day == date.day;
+    }).toList();
+
+    // Sort by time (newest first)
+    dayRecords.sort((a, b) => b.startTime.compareTo(a.startTime));
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardColor(context),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    children: [
+                      Text(
+                        dateStr,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryLight,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$count 次',
+                          style: TextStyle(
+                            color: AppTheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Records list (scrollable)
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: dayRecords.length,
+                      itemBuilder: (context, index) {
+                        final record = dayRecords[index];
+                        final timeStr = DateFormat(
+                          'HH:mm',
+                        ).format(record.startTime);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AppTheme.dividerColor(context),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              // Type badge
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.primaryLight,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${record.bristolScale.typeNumber}',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppTheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // Info
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      timeStr,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleSmall,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '${record.durationText} · ${record.amount.label}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _CalendarDay extends StatelessWidget {
@@ -252,12 +407,15 @@ class _CalendarDay extends StatelessWidget {
   final int count;
   final bool isToday;
   final bool isFuture;
+  final VoidCallback? onTap;
 
   const _CalendarDay({
+    super.key,
     required this.day,
     required this.count,
     required this.isToday,
     required this.isFuture,
+    this.onTap,
   });
 
   Color _getColor() {
@@ -281,19 +439,24 @@ class _CalendarDay extends StatelessWidget {
     final color = _getColor();
     final textColor = count > 1 ? Colors.white : AppTheme.textSecondary;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(6),
-        border: isToday ? Border.all(color: AppTheme.primary, width: 2) : null,
-      ),
-      child: Center(
-        child: Text(
-          '$day',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
-            color: isFuture ? AppTheme.textMuted : textColor,
+    return GestureDetector(
+      onTap: count > 0 && !isFuture ? onTap : null,
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(6),
+          border: isToday
+              ? Border.all(color: AppTheme.primary, width: 2)
+              : null,
+        ),
+        child: Center(
+          child: Text(
+            '$day',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+              color: isFuture ? AppTheme.textMuted : textColor,
+            ),
           ),
         ),
       ),
