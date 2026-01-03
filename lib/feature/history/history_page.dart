@@ -5,10 +5,25 @@ import 'package:easy/model/poop_record.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
 import 'package:intl/intl.dart';
+import 'package:easy/feature/home/widgets/record_dialog.dart';
+import 'package:easy/provider/timer_provider.dart';
 
 /// History Page - Record List
 class HistoryPage extends StatelessWidget {
   const HistoryPage({super.key});
+
+  void _editRecord(BuildContext context, PoopRecord record) {
+    showDialog(
+      context: context,
+      builder: (context) => RecordDialog(
+        timerProvider: context.read<TimerProvider>(),
+        initialRecord: record,
+        onUpdate: (updated) {
+          context.read<PoopProvider>().updateRecord(updated);
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,10 +47,11 @@ class HistoryPage extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             itemCount: records.length,
             itemBuilder: (context, index) {
-              final record = records[records.length - 1 - index];
+              final record = records[index];
               return _RecordItem(
                 record: record,
                 onDelete: () => provider.deleteRecord(record.id),
+                onTap: () => _editRecord(context, record),
               );
             },
           );
@@ -68,82 +84,97 @@ class HistoryPage extends StatelessWidget {
 class _RecordItem extends StatelessWidget {
   final PoopRecord record;
   final VoidCallback onDelete;
+  final VoidCallback onTap;
 
-  const _RecordItem({required this.record, required this.onDelete});
+  const _RecordItem({
+    required this.record,
+    required this.onDelete,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final dateStr = DateFormat('M月d日 HH:mm', 'zh_CN').format(record.startTime);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderColor(context)),
-      ),
-      child: Row(
-        children: [
-          // Type indicator
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: record.bristolScale.isCustom
-                  ? Icon(Icons.edit_rounded, size: 20, color: AppTheme.primary)
-                  : Text(
-                      '${record.bristolScale.typeNumber}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.cardColor(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.borderColor(context)),
+        ),
+        child: Row(
+          children: [
+            // Type indicator
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryLight,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: record.bristolScale.isCustom
+                    ? Icon(
+                        Icons.edit_rounded,
+                        size: 20,
                         color: AppTheme.primary,
+                      )
+                    : Text(
+                        '${record.bristolScale.typeNumber}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primary,
+                        ),
                       ),
-                    ),
+              ),
             ),
-          ),
 
-          const SizedBox(width: 14),
+            const SizedBox(width: 14),
 
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(dateStr, style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    _InfoChip(
-                      icon: Icons.timer_outlined,
-                      text: record.durationText,
-                    ),
-                    _InfoChip(
-                      icon: Icons.water_drop_outlined,
-                      text: record.amountDisplayText,
-                    ),
-                    _InfoChip(
-                      icon: Icons.palette_outlined,
-                      text: record.colorDisplayText,
-                    ),
-                  ],
-                ),
-              ],
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(dateStr, style: Theme.of(context).textTheme.titleSmall),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      _InfoChip(
+                        icon: Icons.timer_outlined,
+                        text: record.durationText,
+                      ),
+                      _InfoChip(
+                        icon: Icons.water_drop_outlined,
+                        text: record.amountDisplayText,
+                      ),
+                      _InfoChip(
+                        icon: Icons.palette_outlined,
+                        text: record.colorDisplayText,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          // Delete
-          IconButton(
-            onPressed: () => _confirmDelete(context),
-            icon: Icon(Icons.delete_outline_rounded, color: AppTheme.textMuted),
-          ),
-        ],
+            // Delete
+            IconButton(
+              onPressed: () => _confirmDelete(context),
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                color: AppTheme.textMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

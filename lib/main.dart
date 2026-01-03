@@ -8,9 +8,14 @@ import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
 import 'package:easy/core/router/deep_link_handler.dart';
 
+import 'package:easy/service/notification_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('zh_CN');
+
+  // Initialize notifications
+  await NotificationService().init();
 
   // Load data in background to avoid blocking initial launch
   final poopProvider = PoopProvider();

@@ -8,6 +8,8 @@ import 'package:easy/core/widget/widget_service.dart';
 import 'package:easy/core/utils/duration_utils.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:easy/service/notification_service.dart';
+
 /// 计时器状态管理
 class TimerProvider with ChangeNotifier {
   final PoopProvider _poopProvider;
@@ -16,6 +18,7 @@ class TimerProvider with ChangeNotifier {
   DateTime? _startTime;
   Timer? _timer;
   Duration _elapsed = Duration.zero;
+  bool _notifiedLongTimer = false;
 
   TimerProvider(this._poopProvider);
 
@@ -35,9 +38,19 @@ class TimerProvider with ChangeNotifier {
   void startTimer() {
     _startTime = DateTime.now();
     _elapsed = Duration.zero;
+    _notifiedLongTimer = false;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _elapsed = DateTime.now().difference(_startTime!);
       notifyListeners();
+
+      // Notify if timer > 30 minutes
+      if (_elapsed.inMinutes >= 30 && !_notifiedLongTimer) {
+        _notifiedLongTimer = true;
+        NotificationService().showNotification(
+          title: '时间过长请注意',
+          body: '你已经记录超过 30 分钟了，请注意身体健康。',
+        );
+      }
 
       // Update widget every 10 seconds
       if (_elapsed.inSeconds % 10 == 0) {
@@ -71,6 +84,9 @@ class TimerProvider with ChangeNotifier {
 
   /// 保存记录
   Future<void> saveRecord({
+    DateTime? startTime,
+    DateTime? endTime,
+    bool endTracking = false,
     PoopColor poopColor = PoopColor.normal,
     String? customColor,
     required BristolScale bristolScale,
@@ -78,13 +94,14 @@ class TimerProvider with ChangeNotifier {
     required PoopAmount amount,
     String? customAmount,
   }) async {
-    if (_startTime == null) return;
+    final start = startTime ?? _startTime;
+    if (start == null) return;
 
-    final endTime = DateTime.now();
+    final end = endTime ?? DateTime.now();
     final record = PoopRecord(
       id: _generateId(),
-      startTime: _startTime!,
-      endTime: endTime,
+      startTime: start,
+      endTime: end,
       poopColor: poopColor,
       customColor: customColor,
       bristolScale: bristolScale,
@@ -96,10 +113,17 @@ class TimerProvider with ChangeNotifier {
     await _poopProvider.addRecord(record);
 
     // 重置计时器
+    if (endTracking) {
+      _stopAndResetTimer();
+    }
+  }
+
+  void _stopAndResetTimer() {
     _timer?.cancel();
     _timer = null;
     _startTime = null;
     _elapsed = Duration.zero;
+    _notifiedLongTimer = false;
     notifyListeners();
 
     // Sync with widget

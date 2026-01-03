@@ -5,24 +5,59 @@ import 'package:easy/model/poop_color.dart';
 import 'package:easy/model/bristol_scale.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/feature/home/widgets/star_animation.dart';
+import 'package:intl/intl.dart';
 
 /// Record Dialog - Premium Minimal Style
 class RecordDialog extends StatefulWidget {
   final TimerProvider timerProvider;
+  final PoopRecord? initialRecord;
+  final Function(PoopRecord)? onUpdate;
 
-  const RecordDialog({super.key, required this.timerProvider});
+  const RecordDialog({
+    super.key,
+    required this.timerProvider,
+    this.initialRecord,
+    this.onUpdate,
+  });
 
   @override
   State<RecordDialog> createState() => _RecordDialogState();
 }
 
 class _RecordDialogState extends State<RecordDialog> {
-  BristolScale _selectedScale = BristolScale.type4;
-  PoopAmount _selectedAmount = PoopAmount.normal;
-  PoopColor _selectedColor = PoopColor.normal;
+  late BristolScale _selectedScale;
+  late PoopAmount _selectedAmount;
+  late PoopColor _selectedColor;
+  late DateTime _startTime;
+  late DateTime _endTime;
+
   final TextEditingController _customTypeController = TextEditingController();
   final TextEditingController _customAmountController = TextEditingController();
   final TextEditingController _customColorController = TextEditingController();
+
+  bool get _isEditMode => widget.initialRecord != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEditMode) {
+      final record = widget.initialRecord!;
+      _selectedScale = record.bristolScale;
+      _selectedAmount = record.amount;
+      _selectedColor = record.poopColor;
+      _startTime = record.startTime;
+      _endTime = record.endTime;
+      _customTypeController.text = record.customType ?? '';
+      _customAmountController.text = record.customAmount ?? '';
+      _customColorController.text = record.customColor ?? '';
+    } else {
+      _selectedScale = BristolScale.type4;
+      _selectedAmount = PoopAmount.normal;
+      _selectedColor = PoopColor.normal;
+      _startTime = widget.timerProvider.startTime ?? DateTime.now();
+      _endTime = DateTime.now();
+    }
+  }
 
   @override
   void dispose() {
@@ -32,32 +67,111 @@ class _RecordDialogState extends State<RecordDialog> {
     super.dispose();
   }
 
-  void _submit() {
-    // Save record
-    widget.timerProvider.saveRecord(
-      bristolScale: _selectedScale,
-      customType: _selectedScale.isCustom ? _customTypeController.text : null,
-      amount: _selectedAmount,
-      customAmount: _selectedAmount.isCustom
-          ? _customAmountController.text
-          : null,
-      poopColor: _selectedColor,
-      customColor: _selectedColor.isCustom ? _customColorController.text : null,
+  String get _durationText {
+    final diff = _endTime.difference(_startTime);
+    final minutes = diff.inMinutes;
+    if (minutes < 60) return '$minutes分钟';
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+    return mins > 0 ? '$hours小时$mins分钟' : '$hours小时';
+  }
+
+  Future<void> _selectTime(bool isStart) async {
+    final initialTime = TimeOfDay.fromDateTime(isStart ? _startTime : _endTime);
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppTheme.primary,
+              onPrimary: Colors.white,
+              onSurface: AppTheme.textPrimary,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
-    // Close dialog first
+    if (pickedTime != null) {
+      setState(() {
+        final now = isStart ? _startTime : _endTime;
+        final newDateTime = DateTime(
+          now.year,
+          now.month,
+          now.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+        if (isStart) {
+          _startTime = newDateTime;
+          // Ensure end time is not before start time
+          if (_endTime.isBefore(_startTime)) {
+            _endTime = _startTime.add(const Duration(minutes: 5));
+          }
+        } else {
+          _endTime = newDateTime;
+          // Ensure start time is not after end time
+          if (_startTime.isAfter(_endTime)) {
+            _startTime = _endTime.subtract(const Duration(minutes: 5));
+          }
+        }
+      });
+    }
+  }
+
+  void _submit() {
+    if (_isEditMode) {
+      final updatedRecord = widget.initialRecord!.copyWith(
+        startTime: _startTime,
+        endTime: _endTime,
+        bristolScale: _selectedScale,
+        customType: _selectedScale.isCustom ? _customTypeController.text : null,
+        amount: _selectedAmount,
+        customAmount: _selectedAmount.isCustom
+            ? _customAmountController.text
+            : null,
+        poopColor: _selectedColor,
+        customColor: _selectedColor.isCustom
+            ? _customColorController.text
+            : null,
+      );
+      widget.onUpdate?.call(updatedRecord);
+    } else {
+      widget.timerProvider.saveRecord(
+        startTime: _startTime,
+        endTime: _endTime,
+        endTracking: true,
+        bristolScale: _selectedScale,
+        customType: _selectedScale.isCustom ? _customTypeController.text : null,
+        amount: _selectedAmount,
+        customAmount: _selectedAmount.isCustom
+            ? _customAmountController.text
+            : null,
+        poopColor: _selectedColor,
+        customColor: _selectedColor.isCustom
+            ? _customColorController.text
+            : null,
+      );
+    }
+
     Navigator.of(context).pop();
 
-    // Trigger star animation after dialog closes
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (mounted) {
-        StarFlyAnimation.trigger(context);
-      }
-    });
+    if (!_isEditMode) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          StarFlyAnimation.trigger(context);
+        }
+      });
+    }
   }
 
   void _cancel() {
-    widget.timerProvider.cancelTimer();
+    if (!_isEditMode) {
+      widget.timerProvider.cancelTimer();
+    }
     Navigator.of(context).pop();
   }
 
@@ -79,7 +193,10 @@ class _RecordDialogState extends State<RecordDialog> {
               // Header
               Row(
                 children: [
-                  Text('记录详情', style: Theme.of(context).textTheme.titleLarge),
+                  Text(
+                    _isEditMode ? '修改记录' : '记录详情',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -91,7 +208,7 @@ class _RecordDialogState extends State<RecordDialog> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      widget.timerProvider.elapsedText,
+                      _durationText,
                       style: TextStyle(
                         color: AppTheme.primary,
                         fontWeight: FontWeight.w600,
@@ -101,7 +218,41 @@ class _RecordDialogState extends State<RecordDialog> {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              // Time Editor
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.dividerColor(context),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _TimeItem(
+                        label: '开始',
+                        time: _startTime,
+                        onTap: () => _selectTime(true),
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 30,
+                      color: AppTheme.borderColor(context),
+                    ),
+                    Expanded(
+                      child: _TimeItem(
+                        label: '结束',
+                        time: _endTime,
+                        onTap: () => _selectTime(false),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
 
               // Scrollable content
               Flexible(
@@ -175,6 +326,39 @@ class _RecordDialogState extends State<RecordDialog> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TimeItem extends StatelessWidget {
+  final String label;
+  final DateTime time;
+  final VoidCallback onTap;
+
+  const _TimeItem({
+    required this.label,
+    required this.time,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            DateFormat('HH:mm').format(time),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }
