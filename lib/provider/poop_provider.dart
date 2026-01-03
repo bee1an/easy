@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:easy/model/poop_record.dart';
 import 'package:easy/service/storage_service.dart';
+import 'package:easy/core/widget/widget_service.dart';
+import 'package:easy/core/utils/date_utils.dart';
 
 /// 排便记录状态管理
 class PoopProvider with ChangeNotifier {
@@ -24,6 +26,9 @@ class PoopProvider with ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+
+    // Sync with widget
+    WidgetService.updateWidgetData(_records);
   }
 
   /// 添加记录
@@ -31,6 +36,9 @@ class PoopProvider with ChangeNotifier {
     await _storageService.addRecord(record);
     _records.insert(0, record);
     notifyListeners();
+
+    // Sync with widget
+    WidgetService.updateWidgetData(_records);
   }
 
   /// 更新记录
@@ -54,11 +62,7 @@ class PoopProvider with ChangeNotifier {
   Future<Map<DateTime, int>> getDailyCounts() async {
     final Map<DateTime, int> result = {};
     for (final record in _records) {
-      final date = DateTime(
-        record.startTime.year,
-        record.startTime.month,
-        record.startTime.day,
-      );
+      final date = record.startTime.dateOnly;
       result[date] = (result[date] ?? 0) + 1;
     }
     return result;
@@ -69,6 +73,9 @@ class PoopProvider with ChangeNotifier {
     await _storageService.clearAllRecords();
     _records.clear();
     notifyListeners();
+
+    // Sync with widget
+    WidgetService.updateWidgetData(_records);
   }
 
   /// 导出数据
@@ -78,12 +85,10 @@ class PoopProvider with ChangeNotifier {
 
   /// 获取今日记录
   List<PoopRecord> getTodayRecords() {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    return _records.where((r) {
-      final date = DateTime(r.startTime.year, r.startTime.month, r.startTime.day);
-      return date.isAtSameMomentAs(today);
-    }).toList();
+    final today = DateTime.now().dateOnly;
+    return _records
+        .where((r) => r.startTime.dateOnly.isSameDay(today))
+        .toList();
   }
 
   /// 获取今日次数
@@ -94,44 +99,33 @@ class PoopProvider with ChangeNotifier {
   /// 获取本周次数
   int getWeekCount() {
     final now = DateTime.now();
-    final weekStart = now.subtract(Duration(days: now.weekday - 1));
-    final startOfDay = DateTime(weekStart.year, weekStart.month, weekStart.day);
+    final weekStart = now.subtract(Duration(days: now.weekday - 1)).dateOnly;
 
-    return _records.where((r) {
-      return !r.startTime.isBefore(startOfDay);
-    }).length;
+    return _records.where((r) => !r.startTime.isBefore(weekStart)).length;
   }
 
   /// 获取本月次数
   int getMonthCount() {
-    final now = DateTime.now();
-    final monthStart = DateTime(now.year, now.month, 1);
-
-    return _records.where((r) {
-      return !r.startTime.isBefore(monthStart);
-    }).length;
+    final monthStart = DateTime.now().firstDayOfMonth;
+    return _records.where((r) => !r.startTime.isBefore(monthStart)).length;
   }
 
   /// 计算连续记录天数（连胜）
   int getStreak() {
     if (_records.isEmpty) return 0;
 
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
+    final today = DateTime.now().dateOnly;
 
     // 获取所有有记录的日期
     final Set<DateTime> dates = {};
     for (final record in _records) {
-      final date = DateTime(
-        record.startTime.year,
-        record.startTime.month,
-        record.startTime.day,
-      );
-      dates.add(date);
+      dates.add(record.startTime.dateOnly);
     }
 
     // 如果今天没有记录，从昨天开始算
-    DateTime currentDate = dates.contains(today) ? today : today.subtract(const Duration(days: 1));
+    DateTime currentDate = dates.contains(today)
+        ? today
+        : today.subtract(const Duration(days: 1));
 
     int streak = 0;
     while (dates.contains(currentDate)) {
@@ -147,18 +141,11 @@ class PoopProvider with ChangeNotifier {
     if (_records.isEmpty) return 0;
 
     // 获取所有有记录的日期并排序
-    final List<DateTime> dates = [];
+    final Set<DateTime> dateSet = {};
     for (final record in _records) {
-      final date = DateTime(
-        record.startTime.year,
-        record.startTime.month,
-        record.startTime.day,
-      );
-      if (!dates.contains(date)) {
-        dates.add(date);
-      }
+      dateSet.add(record.startTime.dateOnly);
     }
-    dates.sort();
+    final dates = dateSet.toList()..sort();
 
     if (dates.isEmpty) return 0;
 

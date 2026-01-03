@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
+import 'package:easy/core/theme/heatmap_colors.dart';
+import 'package:easy/core/utils/date_utils.dart';
 import 'package:easy/feature/home/widgets/star_animation.dart';
 import 'package:intl/intl.dart';
 
@@ -19,7 +21,7 @@ class _CalendarCardState extends State<CalendarCard> {
   @override
   void initState() {
     super.initState();
-    _currentMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
+    _currentMonth = DateTime.now().firstDayOfMonth;
   }
 
   void _previousMonth() {
@@ -111,8 +113,8 @@ class _CalendarCardState extends State<CalendarCard> {
           onPressed: _previousMonth,
           icon: const Icon(Icons.chevron_left_rounded),
           style: IconButton.styleFrom(
-            backgroundColor: AppTheme.divider,
-            foregroundColor: AppTheme.textSecondary,
+            backgroundColor: AppTheme.dividerColor(context),
+            foregroundColor: AppTheme.textSecondaryColor(context),
           ),
         ),
         Text(
@@ -125,10 +127,10 @@ class _CalendarCardState extends State<CalendarCard> {
           style: IconButton.styleFrom(
             backgroundColor: isCurrentMonth
                 ? Colors.transparent
-                : AppTheme.divider,
+                : AppTheme.dividerColor(context),
             foregroundColor: isCurrentMonth
-                ? AppTheme.textMuted
-                : AppTheme.textSecondary,
+                ? AppTheme.textMutedColor(context)
+                : AppTheme.textSecondaryColor(context),
           ),
         ),
       ],
@@ -159,15 +161,8 @@ class _CalendarCardState extends State<CalendarCard> {
     BuildContext context,
     Map<DateTime, int> dailyCounts,
   ) {
-    final now = DateTime.now();
-    final firstDayOfMonth = _currentMonth;
-    final lastDayOfMonth = DateTime(
-      _currentMonth.year,
-      _currentMonth.month + 1,
-      0,
-    );
-    final firstWeekday = (firstDayOfMonth.weekday - 1) % 7;
-    final totalDays = lastDayOfMonth.day;
+    final firstWeekday = _currentMonth.weekdayIndex;
+    final totalDays = _currentMonth.daysInMonth;
     final totalCells = ((firstWeekday + totalDays) / 7).ceil() * 7;
 
     return GridView.builder(
@@ -188,13 +183,9 @@ class _CalendarCardState extends State<CalendarCard> {
 
         final day = dayOffset + 1;
         final date = DateTime(_currentMonth.year, _currentMonth.month, day);
-        final dateKey = DateTime(date.year, date.month, date.day);
-        final count = dailyCounts[dateKey] ?? 0;
-        final isToday =
-            date.year == now.year &&
-            date.month == now.month &&
-            date.day == now.day;
-        final isFuture = date.isAfter(now);
+        final count = dailyCounts[date.dateOnly] ?? 0;
+        final isToday = date.isToday;
+        final isFuture = date.isFutureDay;
 
         final dayWidget = _CalendarDay(
           key: isToday ? AnimationKeys.todayCalendarKey : null,
@@ -236,7 +227,7 @@ class _CalendarCardState extends State<CalendarCard> {
               width: 14,
               height: 14,
               decoration: BoxDecoration(
-                color: _getColorForLevel(i),
+                color: HeatmapColors.getColor(context, i),
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
@@ -248,30 +239,13 @@ class _CalendarCardState extends State<CalendarCard> {
     );
   }
 
-  Color _getColorForLevel(int level) {
-    switch (level) {
-      case 0:
-        return AppTheme.divider;
-      case 1:
-        return AppTheme.primary.withValues(alpha: 0.25);
-      case 2:
-        return AppTheme.primary.withValues(alpha: 0.5);
-      case 3:
-        return AppTheme.primary.withValues(alpha: 0.75);
-      default:
-        return AppTheme.primary;
-    }
-  }
-
   void _showDayDetail(BuildContext context, DateTime date, int count) {
     final dateStr = DateFormat('M月d日', 'zh_CN').format(date);
     final provider = Provider.of<PoopProvider>(context, listen: false);
 
     // Get records for this specific day
     final dayRecords = provider.records.where((r) {
-      return r.startTime.year == date.year &&
-          r.startTime.month == date.month &&
-          r.startTime.day == date.day;
+      return r.startTime.dateOnly.isSameDay(date.dateOnly);
     }).toList();
 
     // Sort by time (newest first)
@@ -418,32 +392,32 @@ class _CalendarDay extends StatelessWidget {
     this.onTap,
   });
 
-  Color _getColor() {
-    if (isFuture) return AppTheme.divider.withValues(alpha: 0.5);
-    if (count == 0) return AppTheme.divider;
+  Color _getColor(BuildContext context) {
+    if (isFuture) return HeatmapColors.getFutureColor(context);
+    return HeatmapColors.getColor(context, count);
+  }
 
-    switch (count) {
-      case 1:
-        return AppTheme.primary.withValues(alpha: 0.25);
-      case 2:
-        return AppTheme.primary.withValues(alpha: 0.5);
-      case 3:
-        return AppTheme.primary.withValues(alpha: 0.75);
-      default:
-        return AppTheme.primary;
+  Color _getTextColor(BuildContext context) {
+    final isDark = AppTheme.isDark(context);
+
+    if (isFuture) {
+      return AppTheme.textMutedColor(context);
     }
+
+    if (count >= 2) {
+      return Colors.white;
+    }
+
+    return isDark ? AppTheme.textPrimaryColor(context) : AppTheme.textPrimary;
   }
 
   @override
   Widget build(BuildContext context) {
-    final color = _getColor();
-    final textColor = count > 1 ? Colors.white : AppTheme.textSecondary;
-
     return GestureDetector(
       onTap: count > 0 && !isFuture ? onTap : null,
       child: Container(
         decoration: BoxDecoration(
-          color: color,
+          color: _getColor(context),
           borderRadius: BorderRadius.circular(6),
           border: isToday
               ? Border.all(color: AppTheme.primary, width: 2)
@@ -455,7 +429,7 @@ class _CalendarDay extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
-              color: isFuture ? AppTheme.textMuted : textColor,
+              color: _getTextColor(context),
             ),
           ),
         ),

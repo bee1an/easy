@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:easy/model/poop_record.dart';
+import 'package:easy/core/utils/date_utils.dart';
 
 /// 本地存储服务 - 使用 SharedPreferences（带缓存优化）
 class StorageService {
@@ -34,15 +36,16 @@ class StorageService {
       }
 
       final List<dynamic> json = jsonDecode(jsonString);
-      _cachedRecords = json
-          .map((e) => PoopRecord.fromJson(e as Map<String, dynamic>))
-          .toList()
-        ..sort((a, b) => b.startTime.compareTo(a.startTime));
+      _cachedRecords =
+          json
+              .map((e) => PoopRecord.fromJson(e as Map<String, dynamic>))
+              .toList()
+            ..sort((a, b) => b.startTime.compareTo(a.startTime));
       _isDirty = false;
 
       return List.from(_cachedRecords!);
     } catch (e) {
-      // 发生错误时返回空列表或缓存
+      debugPrint('StorageService: Error loading records: $e');
       return _cachedRecords ?? [];
     }
   }
@@ -67,8 +70,8 @@ class StorageService {
     // 更新缓存
     records.insert(0, record);
 
-    // 异步保存，不阻塞
-    _saveInBackground(records);
+    // 保存
+    await _saveRecords(records);
   }
 
   /// 更新记录（优化版：直接更新缓存）
@@ -77,7 +80,7 @@ class StorageService {
     final index = records.indexWhere((r) => r.id == record.id);
     if (index != -1) {
       records[index] = record;
-      _saveInBackground(records);
+      await _saveRecords(records);
     }
   }
 
@@ -85,11 +88,11 @@ class StorageService {
   Future<void> deleteRecord(String id) async {
     final records = await getRecords();
     records.removeWhere((r) => r.id == id);
-    _saveInBackground(records);
+    await _saveRecords(records);
   }
 
-  /// 后台保存（不阻塞）
-  Future<void> _saveInBackground(List<PoopRecord> records) async {
+  /// 保存记录（内部方法）
+  Future<void> _saveRecords(List<PoopRecord> records) async {
     try {
       final prefs = await _getPrefs();
       final json = jsonEncode(records.map((e) => e.toJson()).toList());
@@ -99,7 +102,7 @@ class StorageService {
       _cachedRecords = List.from(records);
       _isDirty = false;
     } catch (e) {
-      // 保存失败，标记为需要重新加载
+      debugPrint('StorageService: Error saving records: $e');
       _isDirty = true;
     }
   }
@@ -110,11 +113,7 @@ class StorageService {
     final Map<DateTime, List<PoopRecord>> result = {};
 
     for (final record in records) {
-      final date = DateTime(
-        record.startTime.year,
-        record.startTime.month,
-        record.startTime.day,
-      );
+      final date = record.startTime.dateOnly;
       result.putIfAbsent(date, () => []).add(record);
     }
 
@@ -124,17 +123,20 @@ class StorageService {
   /// 获取某一天的记录数量
   Future<int> getRecordCountForDate(DateTime date) async {
     final recordsByDate = await getRecordsByDate();
-    final key = DateTime(date.year, date.month, date.day);
-    return recordsByDate[key]?.length ?? 0;
+    return recordsByDate[date.dateOnly]?.length ?? 0;
   }
 
   /// 获取指定日期范围内的记录
-  Future<List<PoopRecord>> getRecordsInRange(DateTime start, DateTime end) async {
+  Future<List<PoopRecord>> getRecordsInRange(
+    DateTime start,
+    DateTime end,
+  ) async {
     final records = await getRecords();
+    final startDate = start.dateOnly;
+    final endDate = end.dateOnly;
+
     return records.where((r) {
-      final date = DateTime(r.startTime.year, r.startTime.month, r.startTime.day);
-      final startDate = DateTime(start.year, start.month, start.day);
-      final endDate = DateTime(end.year, end.month, end.day);
+      final date = r.startTime.dateOnly;
       return !date.isBefore(startDate) && !date.isAfter(endDate);
     }).toList();
   }

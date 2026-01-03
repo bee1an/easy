@@ -6,6 +6,7 @@ import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/provider/theme_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
+import 'package:easy/core/widget/stat_item.dart';
 
 /// Settings Page
 class SettingsPage extends StatelessWidget {
@@ -100,9 +101,9 @@ class SettingsPage extends StatelessWidget {
           const SizedBox(height: 20),
           Row(
             children: [
-              _StatItem(value: '$totalRecords', label: '总记录'),
-              _StatItem(value: '$streak', label: '当前连续'),
-              _StatItem(value: '$longestStreak', label: '最长连续'),
+              StatItem(value: '$totalRecords', label: '总记录'),
+              StatItem(value: '$streak', label: '当前连续'),
+              StatItem(value: '$longestStreak', label: '最长连续'),
             ],
           ),
         ],
@@ -263,31 +264,6 @@ class SettingsPage extends StatelessWidget {
             },
             child: Text('清除', style: TextStyle(color: AppTheme.error)),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _StatItem({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
         ],
       ),
     );

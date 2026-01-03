@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
+import 'package:easy/core/widget/stat_item.dart';
 
 /// Stats Card - Compact Statistics Display
 class StatsCard extends StatelessWidget {
@@ -24,76 +25,38 @@ class StatsCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Expanded(
-                child: _StatItem(
-                  value: streak,
-                  label: '连续天数',
-                  icon: Icons.local_fire_department_rounded,
-                  iconColor: AppTheme.accent,
-                ),
+              StatItem(
+                value: '$streak',
+                label: '连续天数',
+                icon: Icons.local_fire_department_rounded,
+                iconColor: AppTheme.accent,
               ),
               Container(
                 width: 1,
                 height: 48,
                 color: AppTheme.dividerColor(context),
               ),
-              Expanded(
-                child: _StatItem(
-                  value: todayCount,
-                  label: '今日',
-                  icon: Icons.today_rounded,
-                  iconColor: AppTheme.primary,
-                ),
+              StatItem(
+                value: '$todayCount',
+                label: '今日',
+                icon: Icons.today_rounded,
+                iconColor: AppTheme.primary,
               ),
               Container(
                 width: 1,
                 height: 48,
                 color: AppTheme.dividerColor(context),
               ),
-              Expanded(
-                child: _StatItem(
-                  value: monthCount,
-                  label: '本月',
-                  icon: Icons.calendar_month_rounded,
-                  iconColor: AppTheme.secondary,
-                ),
+              StatItem(
+                value: '$monthCount',
+                label: '本月',
+                icon: Icons.calendar_month_rounded,
+                iconColor: AppTheme.secondary,
               ),
             ],
           ),
         );
       },
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final int value;
-  final String label;
-  final IconData icon;
-  final Color iconColor;
-
-  const _StatItem({
-    required this.value,
-    required this.label,
-    required this.icon,
-    required this.iconColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Icon(icon, color: iconColor, size: 20),
-        const SizedBox(height: 8),
-        Text(
-          '$value',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 2),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ],
     );
   }
 }

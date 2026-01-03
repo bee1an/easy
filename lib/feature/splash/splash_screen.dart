@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy/core/utils/greeting.dart';
 
 /// Splash Screen with Greeting Animation
 class SplashScreen extends StatefulWidget {
@@ -23,13 +24,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   bool _showHome = false;
   bool _animationComplete = false;
-
-  String get _greeting {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return '早上好';
-    if (hour < 18) return '下午好';
-    return '晚上好';
-  }
 
   @override
   void initState() {
@@ -84,22 +78,25 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _startAnimation() async {
+    debugPrint('Splash: Animation started');
     // Start splash fade in
     _splashController.forward();
 
     // Wait for splash to complete
     await Future.delayed(const Duration(milliseconds: 1500));
+    debugPrint('Splash: Showing home content');
 
     // Show home content behind
-    setState(() => _showHome = true);
+    if (mounted) setState(() => _showHome = true);
 
     // Start move animation
     await Future.delayed(const Duration(milliseconds: 100));
-    _moveController.forward();
+    if (mounted) _moveController.forward();
 
     // Wait for move to complete
     await Future.delayed(const Duration(milliseconds: 700));
-    setState(() => _animationComplete = true);
+    debugPrint('Splash: Animation complete');
+    if (mounted) setState(() => _animationComplete = true);
   }
 
   @override
@@ -171,7 +168,7 @@ class _SplashScreenState extends State<SplashScreen>
       },
       blendMode: BlendMode.srcIn,
       child: Text(
-        _greeting,
+        getGreeting(),
         style: GoogleFonts.zhiMangXing(
           fontSize: _sizeAnimation.value,
           fontWeight: FontWeight.w400,

@@ -18,7 +18,7 @@ class StarFlyAnimation {
     final sourceBox =
         AnimationKeys.saveButtonKey.currentContext?.findRenderObject()
             as RenderBox?;
-    if (sourceBox == null) return;
+    if (sourceBox == null || !sourceBox.attached) return;
     final sourcePos = sourceBox.localToGlobal(
       Offset(sourceBox.size.width / 2, sourceBox.size.height / 2),
     );
@@ -27,7 +27,7 @@ class StarFlyAnimation {
     final targetBox =
         AnimationKeys.todayCalendarKey.currentContext?.findRenderObject()
             as RenderBox?;
-    if (targetBox == null) return;
+    if (targetBox == null || !targetBox.attached) return;
     final targetPos = targetBox.localToGlobal(
       Offset(targetBox.size.width / 2, targetBox.size.height / 2),
     );

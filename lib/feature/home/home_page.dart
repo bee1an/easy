@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
+import 'package:easy/core/utils/greeting.dart';
 import 'package:easy/feature/home/widgets/stats_card.dart';
 import 'package:easy/feature/home/widgets/calendar_card.dart';
 import 'package:easy/feature/home/widgets/quick_action_button.dart';
@@ -39,16 +40,7 @@ class _HomePageState extends State<HomePage> {
                   // Header Row
                   Consumer<PoopProvider>(
                     builder: (context, provider, child) {
-                      final hour = DateTime.now().hour;
-                      String greeting;
-                      if (hour < 12) {
-                        greeting = '早上好';
-                      } else if (hour < 18) {
-                        greeting = '下午好';
-                      } else {
-                        greeting = '晚上好';
-                      }
-
+                      final greeting = getGreeting();
                       final todayCount = provider.getTodayCount();
 
                       return Row(
@@ -69,7 +61,9 @@ class _HomePageState extends State<HomePage> {
                                       ? '今日尚未记录'
                                       : '今日已记录 $todayCount 次',
                                   style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(color: AppTheme.textMuted),
+                                      ?.copyWith(
+                                        color: AppTheme.textMutedColor(context),
+                                      ),
                                 ),
                               ],
                             ),
@@ -125,7 +119,7 @@ class _ActionButton extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.all(8),
-        child: Icon(icon, size: 24, color: AppTheme.textMuted),
+        child: Icon(icon, size: 24, color: AppTheme.textMutedColor(context)),
       ),
     );
   }
