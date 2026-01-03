@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:easy/provider/timer_provider.dart';
 import 'package:easy/model/poop_record.dart';
 import 'package:easy/model/poop_color.dart';
@@ -77,49 +78,58 @@ class _RecordDialogState extends State<RecordDialog> {
   }
 
   Future<void> _selectTime(bool isStart) async {
-    final initialTime = TimeOfDay.fromDateTime(isStart ? _startTime : _endTime);
-    final pickedTime = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppTheme.primary,
-              onPrimary: Colors.white,
-              onSurface: AppTheme.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
+    final now = isStart ? _startTime : _endTime;
 
-    if (pickedTime != null) {
-      setState(() {
-        final now = isStart ? _startTime : _endTime;
-        final newDateTime = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-        if (isStart) {
-          _startTime = newDateTime;
-          // Ensure end time is not before start time
-          if (_endTime.isBefore(_startTime)) {
-            _endTime = _startTime.add(const Duration(minutes: 5));
-          }
-        } else {
-          _endTime = newDateTime;
-          // Ensure start time is not after end time
-          if (_startTime.isAfter(_endTime)) {
-            _startTime = _endTime.subtract(const Duration(minutes: 5));
-          }
-        }
-      });
-    }
+    await showCupertinoModalPopup(
+      context: context,
+      builder: (context) => Container(
+        height: 260,
+        color: AppTheme.cardColor(context),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                CupertinoButton(
+                  child: const Text('取消'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                CupertinoButton(
+                  child: const Text('完成'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            Expanded(
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.time,
+                initialDateTime: now,
+                use24hFormat: true,
+                onDateTimeChanged: (newDateTime) {
+                  setState(() {
+                    if (isStart) {
+                      _startTime = newDateTime;
+                      // Ensure end time is not before start time
+                      if (_endTime.isBefore(_startTime)) {
+                        _endTime = _startTime.add(const Duration(minutes: 5));
+                      }
+                    } else {
+                      _endTime = newDateTime;
+                      // Ensure start time is not after end time
+                      if (_startTime.isAfter(_endTime)) {
+                        _startTime = _endTime.subtract(
+                          const Duration(minutes: 5),
+                        );
+                      }
+                    }
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _submit() {
