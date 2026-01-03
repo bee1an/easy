@@ -73,6 +73,7 @@ flutter:
   # 要向应用程序添加静态资源，请添加一个 assets 部分，如下所示：
   assets:
     - assets/images/
+    - shorebird.yaml
 
   # 图片资源可以引用一个或多个特定分辨率的 "变体"，请参阅：
   # https://flutter.dev/to/resolution-aware-images
