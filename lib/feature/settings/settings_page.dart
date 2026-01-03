@@ -7,6 +7,7 @@ import 'package:easy/provider/theme_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
 import 'package:easy/core/widget/stat_item.dart';
+import 'package:easy/core/constants/build_info.dart';
 
 /// Settings Page
 class SettingsPage extends StatelessWidget {
@@ -68,7 +69,7 @@ class SettingsPage extends StatelessWidget {
                 context,
                 icon: Icons.info_outline_rounded,
                 title: 'Easy',
-                subtitle: '版本 1.0.0',
+                subtitle: '版本 1.0.0 · 更新于 $kBuildTime',
               ),
             ],
           );

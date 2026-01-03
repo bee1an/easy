@@ -1,12 +1,24 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:easy/model/poop_record.dart';
 
 /// Service to synchronize data with iOS Home Screen Widget
 class WidgetService {
-  static const String _groupId = 'group.com.bee1an.easy';
+  static const String _defaultGroupId = 'group.com.bee1an.easy';
   static const String _iosWidgetName = 'EasyWidget';
+
+  /// Get the actual App Group ID (handles SideStore/AltStore re-signing)
+  static Future<String> _getActualGroupId() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      return 'group.${packageInfo.packageName}';
+    } catch (e) {
+      debugPrint('WidgetService: Error getting package info: $e');
+      return _defaultGroupId;
+    }
+  }
 
   /// Update widget data
   static Future<void> updateWidgetData(List<PoopRecord> records) async {
@@ -14,6 +26,7 @@ class WidgetService {
       'WidgetService: updateWidgetData called with ${records.length} records',
     );
     try {
+      final groupId = await _getActualGroupId();
       final now = DateTime.now();
       final currentMonth = now.month;
       final currentYear = now.year;
@@ -43,7 +56,7 @@ class WidgetService {
       debugPrint('WidgetService: Widget data: $data');
 
       // Save to shared container
-      await HomeWidget.setAppGroupId(_groupId);
+      await HomeWidget.setAppGroupId(groupId);
       await HomeWidget.saveWidgetData('monthly_stats', jsonEncode(data));
 
       // Notify the widget to update
@@ -60,7 +73,8 @@ class WidgetService {
     String elapsedText,
   ) async {
     try {
-      await HomeWidget.setAppGroupId(_groupId);
+      final groupId = await _getActualGroupId();
+      await HomeWidget.setAppGroupId(groupId);
       await HomeWidget.saveWidgetData('is_running', isRunning);
       await HomeWidget.saveWidgetData('elapsed_text', elapsedText);
 

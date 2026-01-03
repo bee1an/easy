@@ -26,8 +26,24 @@ struct Provider: TimelineProvider {
         completion(timeline)
     }
 
+    private func _getGroupId() -> String {
+        // Fallback to hardcoded ID if something goes wrong
+        let fallbackId = "group.com.bee1an.easy"
+        
+        guard let bundleId = Bundle.main.bundleIdentifier else {
+            return fallbackId
+        }
+        
+        // SideStore usually changes IDs to something like [TeamID].com.bee1an.easy
+        // or appends a suffix. The App Group usually follows the pattern "group.[BundleID]"
+        // If we are in the widget extension, we need to remove the extension suffix
+        let baseId = bundleId.replacingOccurrences(of: ".EasyWidget", with: "")
+        return "group.\(baseId)"
+    }
+
     private func _getEntry(date: Date) -> EasyWidgetEntry {
-        let userDefaults = UserDefaults(suiteName: "group.com.bee1an.easy")
+        let suiteName = _getGroupId()
+        let userDefaults = UserDefaults(suiteName: suiteName)
         
         // Use a default month/year if data is missing or invalid
         var currentMonth = Calendar.current.component(.month, from: date)
