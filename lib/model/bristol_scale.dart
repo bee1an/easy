@@ -1,6 +1,6 @@
-/// 布里斯托大便分类法 (Bristol Stool Scale)
+/// Bristol Stool Scale (布里斯托大便分类法)
 ///
-/// 一种医学上用于分类大便形态的量表，分为 7 个级别
+/// A medical classification for stool forms, with 7 standard types + custom
 enum BristolScale {
   type1,
   type2,
@@ -8,12 +8,16 @@ enum BristolScale {
   type4,
   type5,
   type6,
-  type7;
+  type7,
+  custom;
 
-  /// 类型编号
-  int get typeNumber => index + 1;
+  /// Type number (1-7, 0 for custom)
+  int get typeNumber => this == custom ? 0 : index + 1;
 
-  /// 描述
+  /// Whether this is a custom type
+  bool get isCustom => this == custom;
+
+  /// Description
   String get description {
     switch (this) {
       case BristolScale.type1:
@@ -30,10 +34,12 @@ enum BristolScale {
         return '蓬松的糊状，边缘破碎';
       case BristolScale.type7:
         return '完全液体，无固体块';
+      case BristolScale.custom:
+        return '自定义类型';
     }
   }
 
-  /// 简短描述
+  /// Short description
   String get shortDescription {
     switch (this) {
       case BristolScale.type1:
@@ -50,9 +56,11 @@ enum BristolScale {
         return '轻度腹泻';
       case BristolScale.type7:
         return '严重腹泻';
+      case BristolScale.custom:
+        return '自定义';
     }
   }
 
-  /// 显示文本
-  String get label => 'Type $typeNumber - $shortDescription';
+  /// Display label
+  String get label => isCustom ? '自定义' : 'Type $typeNumber - $shortDescription';
 }

@@ -94,14 +94,16 @@ class _RecordItem extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
-              child: Text(
-                '${record.bristolScale.typeNumber}',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: AppTheme.primary,
-                ),
-              ),
+              child: record.bristolScale.isCustom
+                  ? Icon(Icons.edit_rounded, size: 20, color: AppTheme.primary)
+                  : Text(
+                      '${record.bristolScale.typeNumber}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.primary,
+                      ),
+                    ),
             ),
           ),
 
@@ -114,16 +116,21 @@ class _RecordItem extends StatelessWidget {
               children: [
                 Text(dateStr, style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 4),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
                   children: [
                     _InfoChip(
                       icon: Icons.timer_outlined,
                       text: record.durationText,
                     ),
-                    const SizedBox(width: 8),
                     _InfoChip(
                       icon: Icons.water_drop_outlined,
-                      text: record.amount.label,
+                      text: record.amountDisplayText,
+                    ),
+                    _InfoChip(
+                      icon: Icons.palette_outlined,
+                      text: record.colorDisplayText,
                     ),
                   ],
                 ),

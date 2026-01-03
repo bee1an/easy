@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:easy/model/poop_record.dart';
+import 'package:easy/model/poop_color.dart';
 import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/model/bristol_scale.dart';
 import 'package:easy/core/widget/widget_service.dart';
@@ -70,9 +71,12 @@ class TimerProvider with ChangeNotifier {
 
   /// 保存记录
   Future<void> saveRecord({
-    String? color,
+    PoopColor poopColor = PoopColor.normal,
+    String? customColor,
     required BristolScale bristolScale,
+    String? customType,
     required PoopAmount amount,
+    String? customAmount,
   }) async {
     if (_startTime == null) return;
 
@@ -81,9 +85,12 @@ class TimerProvider with ChangeNotifier {
       id: _generateId(),
       startTime: _startTime!,
       endTime: endTime,
-      color: color,
+      poopColor: poopColor,
+      customColor: customColor,
       bristolScale: bristolScale,
+      customType: customType,
       amount: amount,
+      customAmount: customAmount,
     );
 
     await _poopProvider.addRecord(record);

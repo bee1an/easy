@@ -328,14 +328,20 @@ class _CalendarCardState extends State<CalendarCard> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Center(
-                                  child: Text(
-                                    '${record.bristolScale.typeNumber}',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppTheme.primary,
-                                    ),
-                                  ),
+                                  child: record.bristolScale.isCustom
+                                      ? Icon(
+                                          Icons.edit_rounded,
+                                          size: 18,
+                                          color: AppTheme.primary,
+                                        )
+                                      : Text(
+                                          '${record.bristolScale.typeNumber}',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppTheme.primary,
+                                          ),
+                                        ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -352,7 +358,7 @@ class _CalendarCardState extends State<CalendarCard> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '${record.durationText} · ${record.amount.label}',
+                                      '${record.durationText} · ${record.amountDisplayText} · ${record.colorDisplayText}',
                                       style: Theme.of(
                                         context,
                                       ).textTheme.bodySmall,
