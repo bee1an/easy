@@ -12,6 +12,7 @@ class NotificationService {
 
   /// Initialize notification service
   Future<void> init() async {
+    if (kIsWeb) return;
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
@@ -26,12 +27,16 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    await _notificationsPlugin.initialize(
-      initSettings,
-      onDidReceiveNotificationResponse: (details) {
-        debugPrint('Notification clicked: ${details.payload}');
-      },
-    );
+    try {
+      await _notificationsPlugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: (details) {
+          debugPrint('Notification clicked: ${details.payload}');
+        },
+      );
+    } catch (e) {
+      debugPrint('NotificationService: init failed: $e');
+    }
   }
 
   /// Show a simple notification
@@ -41,6 +46,7 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
+    if (kIsWeb) return;
     const androidDetails = AndroidNotificationDetails(
       'easy_timer_channel',
       'Timer Notifications',
@@ -60,6 +66,16 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    await _notificationsPlugin.show(id, title, body, details, payload: payload);
+    try {
+      await _notificationsPlugin.show(
+        id,
+        title,
+        body,
+        details,
+        payload: payload,
+      );
+    } catch (e) {
+      debugPrint('NotificationService: show failed: $e');
+    }
   }
 }

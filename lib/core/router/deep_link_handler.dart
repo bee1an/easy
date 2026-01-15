@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy/provider/timer_provider.dart';
@@ -21,6 +22,7 @@ class _DeepLinkHandlerState extends State<DeepLinkHandler> {
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) return;
     _initDeepLinks();
   }
 
@@ -31,19 +33,23 @@ class _DeepLinkHandlerState extends State<DeepLinkHandler> {
   }
 
   void _initDeepLinks() {
-    _appLinks = AppLinks();
+    try {
+      _appLinks = AppLinks();
 
-    // Handle links when app is in foreground or background
-    _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
-      debugPrint('DeepLink: Received uri: $uri');
-      _handleUri(uri);
-    });
+      // Handle links when app is in foreground or background
+      _linkSubscription = _appLinks.uriLinkStream.listen((uri) {
+        debugPrint('DeepLink: Received uri: $uri');
+        _handleUri(uri);
+      });
 
-    // Handle link that opened the app
-    // Use addPostFrameCallback to ensure UI is ready before processing
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkInitialLink();
-    });
+      // Handle link that opened the app
+      // Use addPostFrameCallback to ensure UI is ready before processing
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkInitialLink();
+      });
+    } catch (e) {
+      debugPrint('DeepLink: init failed: $e');
+    }
   }
 
   Future<void> _checkInitialLink() async {

@@ -4,7 +4,6 @@ import 'package:easy/model/poop_record.dart';
 import 'package:easy/model/poop_color.dart';
 import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/model/bristol_scale.dart';
-import 'package:easy/core/widget/widget_service.dart';
 import 'package:easy/core/utils/duration_utils.dart';
 import 'package:uuid/uuid.dart';
 
@@ -51,16 +50,8 @@ class TimerProvider with ChangeNotifier {
           body: '你已经记录超过 30 分钟了，请注意身体健康。',
         );
       }
-
-      // Update widget every 10 seconds
-      if (_elapsed.inSeconds % 10 == 0) {
-        WidgetService.updateTimerStatus(true, elapsedText);
-      }
     });
     notifyListeners();
-
-    // Immediate update
-    WidgetService.updateTimerStatus(true, elapsedText);
   }
 
   /// 停止计时
@@ -77,9 +68,6 @@ class TimerProvider with ChangeNotifier {
     _startTime = null;
     _elapsed = Duration.zero;
     notifyListeners();
-
-    // Sync with widget
-    WidgetService.updateTimerStatus(isRunning, elapsedText);
   }
 
   /// 保存记录
@@ -125,9 +113,6 @@ class TimerProvider with ChangeNotifier {
     _elapsed = Duration.zero;
     _notifiedLongTimer = false;
     notifyListeners();
-
-    // Sync with widget
-    WidgetService.updateTimerStatus(isRunning, elapsedText);
   }
 
   /// 生成唯一 ID（使用 UUID v4）

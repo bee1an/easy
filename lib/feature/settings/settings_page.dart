@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/provider/theme_provider.dart';
+import 'package:easy/provider/auth_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
 import 'package:easy/core/widget/stat_item.dart';
@@ -52,6 +53,13 @@ class SettingsPage extends StatelessWidget {
                 isDestructive: true,
                 onTap: () => _confirmClearAll(context, provider),
               ),
+
+              const SizedBox(height: 24),
+
+              // Cloud Sync Section
+              _buildSectionTitle(context, '云同步'),
+              const SizedBox(height: 12),
+              _buildCloudSyncTile(context),
 
               const SizedBox(height: 24),
 
@@ -106,6 +114,140 @@ class SettingsPage extends StatelessWidget {
               StatItem(value: '$streak', label: '当前连续'),
               StatItem(value: '$longestStreak', label: '最长连续'),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCloudSyncTile(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        final isLoggedIn = authProvider.isLoggedIn;
+        final userEmail = authProvider.userEmail;
+        final userId = authProvider.userId;
+
+        if (isLoggedIn) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.cardColor(context),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.borderColor(context)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.cloud_done_rounded, color: AppTheme.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '已登录',
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            userEmail ?? '',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _confirmSignOut(context, authProvider),
+                      child: const Text('退出'),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
+                // Widget config info
+                Text('小组件配置', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '在小组件配置中输入以下 User ID：',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SelectableText(
+                              userId ?? '',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    fontFamily: 'monospace',
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy_rounded, size: 20),
+                            onPressed: () {
+                              Clipboard.setData(
+                                ClipboardData(text: userId ?? ''),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('已复制 User ID'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // Not logged in (should not happen with forced login, but keep as fallback)
+        return _buildSettingTile(
+          context,
+          icon: Icons.cloud_outlined,
+          title: '云同步',
+          subtitle: '登录后可在小组件中显示数据',
+          onTap: () => AppRouter.push(context, AppRouter.auth),
+        );
+      },
+    );
+  }
+
+  void _confirmSignOut(BuildContext context, AuthProvider authProvider) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('确认退出'),
+        content: const Text('退出后需要重新登录才能使用'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              await authProvider.signOut();
+              // App will automatically show login page due to Consumer in main.dart
+            },
+            child: const Text('退出'),
           ),
         ],
       ),

@@ -1,12 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:easy/model/poop_record.dart';
-import 'package:easy/service/storage_service.dart';
-import 'package:easy/core/widget/widget_service.dart';
+import 'package:easy/service/cloud_sync_service.dart';
 import 'package:easy/core/utils/date_utils.dart';
 
-/// 排便记录状态管理
+/// 排便记录状态管理（纯云端存储模式）
 class PoopProvider with ChangeNotifier {
-  final StorageService _storageService = StorageService();
+  final CloudSyncService _cloudSync = CloudSyncService.instance;
 
   List<PoopRecord> _records = [];
   bool _isLoading = false;
@@ -17,45 +17,60 @@ class PoopProvider with ChangeNotifier {
   /// 是否正在加载
   bool get isLoading => _isLoading;
 
-  /// 加载记录
+  /// 从云端加载记录
   Future<void> loadRecords() async {
+    if (!_cloudSync.isLoggedIn) {
+      _records = [];
+      notifyListeners();
+      return;
+    }
+
     _isLoading = true;
     notifyListeners();
 
-    _records = await _storageService.getRecords();
+    _records = await _cloudSync.fetchRecords();
 
     _isLoading = false;
     notifyListeners();
-
-    // Sync with widget
-    WidgetService.updateWidgetData(_records);
   }
 
-  /// 添加记录
-  Future<void> addRecord(PoopRecord record) async {
-    await _storageService.addRecord(record);
-    _records.insert(0, record);
-    notifyListeners();
+  /// 添加记录（直接写入云端）
+  Future<bool> addRecord(PoopRecord record) async {
+    if (!_cloudSync.isLoggedIn) return false;
 
-    // Sync with widget
-    WidgetService.updateWidgetData(_records);
-  }
-
-  /// 更新记录
-  Future<void> updateRecord(PoopRecord record) async {
-    await _storageService.updateRecord(record);
-    final index = _records.indexWhere((r) => r.id == record.id);
-    if (index != -1) {
-      _records[index] = record;
+    final success = await _cloudSync.syncRecord(record);
+    if (success) {
+      _records.insert(0, record);
       notifyListeners();
     }
+    return success;
   }
 
-  /// 删除记录
-  Future<void> deleteRecord(String id) async {
-    await _storageService.deleteRecord(id);
-    _records.removeWhere((r) => r.id == id);
-    notifyListeners();
+  /// 更新记录（直接写入云端）
+  Future<bool> updateRecord(PoopRecord record) async {
+    if (!_cloudSync.isLoggedIn) return false;
+
+    final success = await _cloudSync.syncRecord(record);
+    if (success) {
+      final index = _records.indexWhere((r) => r.id == record.id);
+      if (index != -1) {
+        _records[index] = record;
+        notifyListeners();
+      }
+    }
+    return success;
+  }
+
+  /// 删除记录（直接从云端删除）
+  Future<bool> deleteRecord(String id) async {
+    if (!_cloudSync.isLoggedIn) return false;
+
+    final success = await _cloudSync.deleteRecord(id);
+    if (success) {
+      _records.removeWhere((r) => r.id == id);
+      notifyListeners();
+    }
+    return success;
   }
 
   /// 按日期获取记录数量
@@ -68,19 +83,20 @@ class PoopProvider with ChangeNotifier {
     return result;
   }
 
-  /// 清空所有记录
+  /// 清空所有记录（需要逐个删除云端记录）
   Future<void> clearAll() async {
-    await _storageService.clearAllRecords();
+    if (!_cloudSync.isLoggedIn) return;
+
+    for (final record in List.from(_records)) {
+      await _cloudSync.deleteRecord(record.id);
+    }
     _records.clear();
     notifyListeners();
-
-    // Sync with widget
-    WidgetService.updateWidgetData(_records);
   }
 
-  /// 导出数据
+  /// 导出数据为 JSON 字符串
   Future<String> exportData() async {
-    return await _storageService.exportToJson();
+    return jsonEncode(_records.map((e) => e.toJson()).toList());
   }
 
   /// 获取今日记录
