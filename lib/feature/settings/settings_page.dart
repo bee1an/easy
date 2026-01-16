@@ -79,6 +79,14 @@ class SettingsPage extends StatelessWidget {
                 title: 'Easy',
                 subtitle: '版本 1.0.0 · 更新于 $kBuildTime',
               ),
+              const SizedBox(height: 8),
+              _buildSettingTile(
+                context,
+                icon: Icons.perm_identity_rounded,
+                title: 'App Identity',
+                subtitle: 'Show runtime Team ID and Bundle ID',
+                onTap: () => AppRouter.push(context, AppRouter.appIdentity),
+              ),
             ],
           );
         },

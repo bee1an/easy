@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:easy/feature/home/home_page.dart';
 import 'package:easy/feature/history/history_page.dart';
 import 'package:easy/feature/settings/settings_page.dart';
+import 'package:easy/feature/settings/app_identity_page.dart';
 import 'package:easy/feature/splash/splash_screen.dart';
 import 'package:easy/feature/auth/auth_page.dart';
 
@@ -12,6 +13,7 @@ class AppRouter {
   static const String home = '/';
   static const String history = '/history';
   static const String settings = '/settings';
+  static const String appIdentity = '/app-identity';
   static const String auth = '/auth';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -22,6 +24,8 @@ class AppRouter {
         return _buildRoute(const HistoryPage());
       case AppRouter.settings:
         return _buildRoute(const SettingsPage());
+      case AppRouter.appIdentity:
+        return _buildRoute(const AppIdentityPage());
       case auth:
         return _buildRoute(const AuthPage());
       default:
