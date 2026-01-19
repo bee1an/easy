@@ -31,8 +31,8 @@ const String kBuildTime = '$BUILD_TIME';
 EOF
 echo "🕐 Build Time: $BUILD_TIME"
 
-# Push patch
-shorebird patch ios --release-version="$VERSION" --no-confirm
+# Push patch (use development for free Apple ID)
+shorebird patch ios --release-version="$VERSION" --no-confirm --export-method=development --allow-asset-diffs
 
 echo ""
 echo "✅ Patch pushed successfully!"
