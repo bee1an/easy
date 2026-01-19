@@ -163,7 +163,7 @@ class _SplashScreenState extends State<SplashScreen>
         return const LinearGradient(
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
-          colors: [Color(0xFF10B981), Color(0xFF06B6D4), Color(0xFF6366F1)],
+          colors: [Color(0xFFF59E0B), Color(0xFFFB923C), Color(0xFFEA580C)],
         ).createShader(bounds);
       },
       blendMode: BlendMode.srcIn,

@@ -6,9 +6,9 @@ import 'package:easy/feature/home/widgets/record_dialog.dart';
 
 /// Module type definition for extensibility
 enum HealthModule {
-  poop('排便', Icons.wb_sunny_outlined, Color(0xFF10B981)),
-  diet('饮食', Icons.restaurant_outlined, Color(0xFFF59E0B)),
-  exercise('运动', Icons.directions_run_outlined, Color(0xFF6366F1));
+  poop('排便', Icons.wb_sunny_outlined, Color(0xFFF59E0B)), // Amber - primary
+  diet('饮食', Icons.restaurant_outlined, Color(0xFFEA580C)), // Orange Red
+  exercise('运动', Icons.directions_run_outlined, Color(0xFFFB923C)); // Orange
 
   final String label;
   final IconData icon;

@@ -79,9 +79,9 @@ class _CalligraphyTextState extends State<CalligraphyText>
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                   colors: const [
-                    Color(0xFF10B981), // Emerald
-                    Color(0xFF06B6D4), // Cyan
-                    Color(0xFF6366F1), // Indigo
+                    Color(0xFFF59E0B), // Amber
+                    Color(0xFFFB923C), // Orange
+                    Color(0xFFEA580C), // Orange Red
                   ],
                   stops: const [0.0, 0.5, 1.0],
                 ).createShader(bounds);

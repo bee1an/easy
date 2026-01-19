@@ -30,13 +30,13 @@ class AppTheme {
   static Color textMutedColor(BuildContext context) =>
       isDark(context) ? darkTextMuted : textMuted;
 
-  // Brand Colors
-  static const Color primary = Color(0xFF10B981); // Emerald
-  static const Color primaryDark = Color(0xFF059669);
-  static const Color primaryLight = Color(0xFFD1FAE5);
+  // Brand Colors - Warm Amber/Orange (matching logo gradient)
+  static const Color primary = Color(0xFFF59E0B); // Amber
+  static const Color primaryDark = Color(0xFFEA580C); // Orange Red
+  static const Color primaryLight = Color(0xFFFEF3C7); // Amber 100
 
-  static const Color secondary = Color(0xFF6366F1); // Indigo
-  static const Color accent = Color(0xFFF59E0B); // Amber
+  static const Color secondary = Color(0xFFEA580C); // Orange Red
+  static const Color accent = Color(0xFFFB923C); // Orange 400
 
   static const Color surface = Color(0xFFFFFFFF);
   static const Color background = Color(0xFFFAFAFA);
@@ -49,8 +49,8 @@ class AppTheme {
   static const Color border = Color(0xFFE5E7EB);
   static const Color divider = Color(0xFFF3F4F6);
 
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
+  static const Color success = Color(0xFF10B981); // Keep green for semantic
+  static const Color warning = Color(0xFFFBBF24); // Yellow 400
   static const Color error = Color(0xFFEF4444);
 
   /// Build Material Theme
