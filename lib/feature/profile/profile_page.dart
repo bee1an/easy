@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:easy/provider/auth_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
+import 'package:easy/core/constants/avatars.dart';
+import 'package:easy/feature/profile/avatar_picker.dart';
 
 /// Profile Page - "我的" tab
 ///
@@ -54,69 +56,81 @@ class ProfilePage extends StatelessWidget {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final userEmail = authProvider.userEmail ?? '';
-        final initial = userEmail.isNotEmpty ? userEmail[0].toUpperCase() : '?';
+        final avatarId = authProvider.avatarId;
 
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppTheme.primary,
-                AppTheme.primary.withValues(alpha: 0.8),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primary.withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              // Avatar
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              // Avatar - tappable to change
+              GestureDetector(
+                onTap: () => _onAvatarTap(context, authProvider, avatarId),
+                child: Stack(
+                  children: [
+                    SizedBox(
+                      width: 64,
+                      height: 64,
+                      child: Image.asset(
+                        Avatars.getPath(avatarId),
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              userEmail.isNotEmpty
+                                  ? userEmail[0].toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    // Edit indicator
+                    Positioned(
+                      right: -2,
+                      bottom: -2,
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppTheme.cardColor(context),
+                            width: 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.edit,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 16),
-              // Email
+              // Email info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '已登录',
-                      style: TextStyle(fontSize: 14, color: Colors.white70),
-                    ),
-                    const SizedBox(height: 4),
                     Text(
                       userEmail,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                      style: Theme.of(context).textTheme.titleMedium,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 4),
+                    Text('已登录', style: Theme.of(context).textTheme.bodySmall),
                   ],
                 ),
               ),
@@ -125,6 +139,29 @@ class ProfilePage extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _onAvatarTap(
+    BuildContext context,
+    AuthProvider authProvider,
+    int currentAvatarId,
+  ) async {
+    final newAvatarId = await AvatarPicker.show(
+      context,
+      currentIndex: currentAvatarId,
+    );
+
+    if (newAvatarId != null && newAvatarId != currentAvatarId) {
+      final success = await authProvider.updateAvatar(newAvatarId);
+      if (success && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('头像已更新'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildMenuTile(

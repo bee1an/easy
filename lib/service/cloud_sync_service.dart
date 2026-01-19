@@ -48,6 +48,10 @@ class CloudSyncService {
   /// Get current user email
   String? get currentUserEmail => _client?.auth.currentUser?.email;
 
+  /// Get current user avatar ID from user_metadata
+  int get avatarId =>
+      _client?.auth.currentUser?.userMetadata?['avatar_id'] as int? ?? 0;
+
   /// Sign up with email and password
   Future<AuthResult> signUp({
     required String email,
@@ -165,6 +169,24 @@ class CloudSyncService {
   /// Sign out
   Future<void> signOut() async {
     await _client?.auth.signOut();
+  }
+
+  /// Update user avatar
+  Future<AuthResult> updateAvatar(int avatarId) async {
+    if (_client == null) {
+      return AuthResult.failure('云同步未配置');
+    }
+
+    try {
+      await _client!.auth.updateUser(
+        UserAttributes(data: {'avatar_id': avatarId}),
+      );
+      return AuthResult.success('');
+    } on AuthException catch (e) {
+      return AuthResult.failure(e.message);
+    } catch (e) {
+      return AuthResult.failure('更新头像失败: $e');
+    }
   }
 
   /// Send password reset email

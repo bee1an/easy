@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:easy/provider/auth_provider.dart';
 import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
+import 'package:easy/core/constants/avatars.dart';
 
 /// Login/Register page
 /// - Login: email + password
@@ -85,6 +86,16 @@ class _AuthPageState extends State<AuthPage> {
     final success = await authProvider.completeRegistration(code: code);
 
     if (success && mounted) {
+      // OTP verified, now move to avatar selection
+      // The AuthPage will detect isSelectingAvatar and show avatar picker
+    }
+  }
+
+  Future<void> _finishRegistration() async {
+    final authProvider = context.read<AuthProvider>();
+    final success = await authProvider.finishRegistration();
+
+    if (success && mounted) {
       final poopProvider = context.read<PoopProvider>();
       await poopProvider.loadRecords();
 
@@ -113,6 +124,11 @@ class _AuthPageState extends State<AuthPage> {
             ),
       body: Consumer<AuthProvider>(
         builder: (context, authProvider, child) {
+          // Avatar selection step (after OTP verified)
+          if (authProvider.isSelectingAvatar) {
+            return _buildAvatarSelection(context, authProvider);
+          }
+
           // If waiting for OTP during registration
           if (authProvider.isWaitingForOtp) {
             return _buildOtpVerification(context, authProvider);
@@ -425,6 +441,138 @@ class _AuthPageState extends State<AuthPage> {
                 _otpController.clear();
               },
               child: const Text('使用其他邮箱'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatarSelection(
+    BuildContext context,
+    AuthProvider authProvider,
+  ) {
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 40),
+
+            // Header
+            Icon(Icons.face_rounded, size: 64, color: AppTheme.primary),
+            const SizedBox(height: 16),
+            Text(
+              '选择头像',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '选择一个代表你的头像',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTheme.textMutedColor(context),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+
+            // Error message
+            if (authProvider.error != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppTheme.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      color: AppTheme.error,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        authProvider.error!,
+                        style: TextStyle(color: AppTheme.error),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Avatar grid
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+              ),
+              itemCount: Avatars.count,
+              itemBuilder: (context, index) {
+                final isSelected = index == authProvider.selectedAvatarId;
+                return GestureDetector(
+                  onTap: () => authProvider.selectAvatar(index),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: isSelected
+                          ? AppTheme.primary.withValues(alpha: 0.15)
+                          : null,
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: Image.asset(
+                      Avatars.getPath(index),
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: AppTheme.primary.withValues(alpha: 0.1),
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 32),
+
+            // Finish button
+            FilledButton(
+              onPressed: authProvider.isLoading ? null : _finishRegistration,
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: authProvider.isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('开始使用', style: TextStyle(fontSize: 16)),
             ),
           ],
         ),

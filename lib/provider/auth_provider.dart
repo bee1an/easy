@@ -14,6 +14,8 @@ class AuthProvider with ChangeNotifier {
   // Registration state
   String? _pendingEmail;
   String? _pendingPassword;
+  int _selectedAvatarId = 0; // Avatar selected during registration
+  bool _isSelectingAvatar = false; // OTP verified, now selecting avatar
 
   /// Whether an auth operation is in progress
   bool get isLoading => _isLoading;
@@ -34,7 +36,17 @@ class AuthProvider with ChangeNotifier {
   String? get userEmail => _cloudSync.currentUserEmail;
 
   /// Whether waiting for OTP verification during registration
-  bool get isWaitingForOtp => _pendingEmail != null && _pendingPassword != null;
+  bool get isWaitingForOtp =>
+      _pendingEmail != null && _pendingPassword != null && !_isSelectingAvatar;
+
+  /// Whether in avatar selection step (after OTP verified)
+  bool get isSelectingAvatar => _isSelectingAvatar;
+
+  /// Currently selected avatar ID
+  int get selectedAvatarId => _selectedAvatarId;
+
+  /// Current user's avatar ID
+  int get avatarId => _cloudSync.avatarId;
 
   /// Pending email for OTP verification
   String? get pendingEmail => _pendingEmail;
@@ -123,8 +135,8 @@ class AuthProvider with ChangeNotifier {
 
     _isLoading = false;
     if (updateResult.success) {
-      _pendingEmail = null;
-      _pendingPassword = null;
+      // Move to avatar selection step
+      _isSelectingAvatar = true;
     } else {
       _error = updateResult.error;
     }
@@ -133,10 +145,58 @@ class AuthProvider with ChangeNotifier {
     return updateResult.success;
   }
 
+  /// Select avatar during registration
+  void selectAvatar(int avatarId) {
+    _selectedAvatarId = avatarId;
+    notifyListeners();
+  }
+
+  /// Complete registration with selected avatar
+  Future<bool> finishRegistration() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    // Save avatar to user_metadata
+    final result = await _cloudSync.updateAvatar(_selectedAvatarId);
+
+    _isLoading = false;
+    if (result.success) {
+      // Clear registration state
+      _pendingEmail = null;
+      _pendingPassword = null;
+      _isSelectingAvatar = false;
+      _selectedAvatarId = 0;
+    } else {
+      _error = result.error;
+    }
+    notifyListeners();
+
+    return result.success;
+  }
+
+  /// Update avatar for logged-in user
+  Future<bool> updateAvatar(int avatarId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    final result = await _cloudSync.updateAvatar(avatarId);
+
+    _isLoading = false;
+    if (!result.success) {
+      _error = result.error;
+    }
+    notifyListeners();
+
+    return result.success;
+  }
+
   /// Cancel registration and go back
   void cancelRegistration() {
     _pendingEmail = null;
     _pendingPassword = null;
+    _isSelectingAvatar = false;
+    _selectedAvatarId = 0;
     _error = null;
     notifyListeners();
   }
