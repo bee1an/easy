@@ -155,6 +155,23 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Send password reset email
+  Future<bool> resetPassword({required String email}) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await _cloudSync.resetPasswordForEmail(email: email);
+
+    _isLoading = false;
+    if (!result.success) {
+      _error = result.error;
+    }
+    notifyListeners();
+
+    return result.success;
+  }
+
   /// Clear error
   void clearError() {
     _error = null;

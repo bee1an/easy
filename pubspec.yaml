@@ -55,6 +55,9 @@ dependencies:
   # Cloud sync for Widget
   supabase_flutter: ^2.8.4
 
+  # Charts for weekly report
+  fl_chart: ^0.70.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

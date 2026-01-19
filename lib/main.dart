@@ -5,11 +5,12 @@ import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/provider/timer_provider.dart';
 import 'package:easy/provider/theme_provider.dart';
 import 'package:easy/provider/auth_provider.dart';
+import 'package:easy/provider/follow_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
 import 'package:easy/core/router/deep_link_handler.dart';
 import 'package:easy/feature/auth/auth_page.dart';
-import 'package:easy/feature/home/home_page.dart';
+import 'package:easy/feature/shell/main_shell.dart';
 import 'package:easy/service/notification_service.dart';
 import 'package:easy/service/cloud_sync_service.dart';
 
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
           create: (context) => TimerProvider(context.read<PoopProvider>()),
         ),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => FollowProvider()),
       ],
       child: Consumer2<ThemeProvider, AuthProvider>(
         builder: (context, themeProvider, authProvider, child) {
@@ -74,7 +76,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Gate widget that shows login page or home page based on auth state
+/// Gate widget that shows login page or main shell based on auth state
 class _AuthGate extends StatelessWidget {
   const _AuthGate();
 
@@ -86,8 +88,8 @@ class _AuthGate extends StatelessWidget {
         if (!authProvider.isLoggedIn) {
           return const AuthPage(isInitialLogin: true);
         }
-        // Show home page if logged in
-        return const HomePage();
+        // Show main shell with bottom navigation if logged in
+        return const MainShell();
       },
     );
   }

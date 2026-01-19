@@ -167,6 +167,22 @@ class CloudSyncService {
     await _client?.auth.signOut();
   }
 
+  /// Send password reset email
+  Future<AuthResult> resetPasswordForEmail({required String email}) async {
+    if (_client == null) {
+      return AuthResult.failure('云同步未配置');
+    }
+
+    try {
+      await _client!.auth.resetPasswordForEmail(email);
+      return AuthResult.success('');
+    } on AuthException catch (e) {
+      return AuthResult.failure(e.message);
+    } catch (e) {
+      return AuthResult.failure('发送重置邮件失败: $e');
+    }
+  }
+
   /// Sync a single record to cloud
   Future<bool> syncRecord(PoopRecord record) async {
     if (_client == null || !isLoggedIn) return false;
@@ -223,14 +239,19 @@ class CloudSyncService {
   }
 
   /// Fetch all records from cloud
-  Future<List<PoopRecord>> fetchRecords() async {
+  /// If [userId] is provided, fetches records for that user (requires mutual follow)
+  /// Otherwise fetches current user's records
+  Future<List<PoopRecord>> fetchRecords({String? userId}) async {
     if (_client == null || !isLoggedIn) return [];
+
+    final targetUserId = userId ?? currentUserId;
+    if (targetUserId == null) return [];
 
     try {
       final response = await _client!
           .from('poop_records')
           .select()
-          .eq('user_id', currentUserId!)
+          .eq('user_id', targetUserId)
           .order('start_time', ascending: false);
 
       return (response as List)

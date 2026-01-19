@@ -1,16 +1,20 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:easy/provider/poop_provider.dart';
 import 'package:easy/provider/theme_provider.dart';
 import 'package:easy/provider/auth_provider.dart';
 import 'package:easy/core/theme/app_theme.dart';
 import 'package:easy/core/router/app_router.dart';
-import 'package:easy/core/widget/stat_item.dart';
 import 'package:easy/core/constants/build_info.dart';
 
 /// Settings Page
+///
+/// Contains:
+/// - Module management entries (poop, diet, exercise)
+/// - Statistics entry
+/// - Social area (follow friends) - placeholder
+/// - Account status (login/logout)
+/// - Appearance (dark mode)
+/// - About
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
@@ -24,116 +28,266 @@ class SettingsPage extends StatelessWidget {
         ),
         title: const Text('设置'),
       ),
-      body: Consumer<PoopProvider>(
-        builder: (context, provider, child) {
-          return ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              // Stats
-              _buildStatsCard(context, provider),
-
-              const SizedBox(height: 24),
-
-              // Data Section
-              _buildSectionTitle(context, '数据管理'),
-              const SizedBox(height: 12),
-              _buildSettingTile(
-                context,
-                icon: Icons.upload_rounded,
-                title: '导出数据',
-                subtitle: '复制 JSON 格式数据',
-                onTap: () => _exportData(context, provider),
-              ),
-              const SizedBox(height: 8),
-              _buildSettingTile(
-                context,
-                icon: Icons.delete_forever_rounded,
-                title: '清除所有数据',
-                subtitle: '此操作不可恢复',
-                isDestructive: true,
-                onTap: () => _confirmClearAll(context, provider),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Cloud Sync Section
-              _buildSectionTitle(context, '云同步'),
-              const SizedBox(height: 12),
-              _buildCloudSyncTile(context),
-
-              const SizedBox(height: 24),
-
-              // Appearance Section
-              _buildSectionTitle(context, '外观'),
-              const SizedBox(height: 12),
-              _buildThemeToggle(context),
-
-              const SizedBox(height: 24),
-
-              // About
-              _buildSectionTitle(context, '关于'),
-              const SizedBox(height: 12),
-              _buildSettingTile(
-                context,
-                icon: Icons.info_outline_rounded,
-                title: 'Easy',
-                subtitle: '版本 1.0.0 · 更新于 $kBuildTime',
-              ),
-              const SizedBox(height: 8),
-              _buildSettingTile(
-                context,
-                icon: Icons.perm_identity_rounded,
-                title: 'App Identity',
-                subtitle: 'Show runtime Team ID and Bundle ID',
-                onTap: () => AppRouter.push(context, AppRouter.appIdentity),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildStatsCard(BuildContext context, PoopProvider provider) {
-    final totalRecords = provider.records.length;
-    final streak = provider.getStreak();
-    final longestStreak = provider.getLongestStreak();
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.cardColor(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.borderColor(context)),
-      ),
-      child: Column(
+      body: ListView(
+        padding: const EdgeInsets.all(20),
         children: [
-          Row(
-            children: [
-              Icon(Icons.bar_chart_rounded, color: AppTheme.primary),
-              const SizedBox(width: 8),
-              Text('统计概览', style: Theme.of(context).textTheme.titleMedium),
-            ],
+          // Module Management Section
+          _buildSectionTitle(context, '健康模块'),
+          const SizedBox(height: 12),
+          _buildModuleSection(context),
+
+          const SizedBox(height: 24),
+
+          // Statistics Section
+          _buildSectionTitle(context, '数据分析'),
+          const SizedBox(height: 12),
+          _buildNavigationTile(
+            context,
+            icon: Icons.bar_chart_rounded,
+            title: '统计分析',
+            subtitle: '查看趋势和分布数据',
+            onTap: () => AppRouter.push(context, AppRouter.stats),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              StatItem(value: '$totalRecords', label: '总记录'),
-              StatItem(value: '$streak', label: '当前连续'),
-              StatItem(value: '$longestStreak', label: '最长连续'),
-            ],
+
+          const SizedBox(height: 24),
+
+          // Social Section
+          _buildSectionTitle(context, '社交'),
+          const SizedBox(height: 12),
+          _buildNavigationTile(
+            context,
+            icon: Icons.people_outline_rounded,
+            title: '关注好友',
+            subtitle: '与好友分享健康数据',
+            onTap: () => AppRouter.push(context, AppRouter.follow),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Account Section
+          _buildSectionTitle(context, '账户'),
+          const SizedBox(height: 12),
+          _buildAccountTile(context),
+
+          const SizedBox(height: 24),
+
+          // Appearance Section
+          _buildSectionTitle(context, '外观'),
+          const SizedBox(height: 12),
+          _buildThemeToggle(context),
+
+          const SizedBox(height: 24),
+
+          // About
+          _buildSectionTitle(context, '关于'),
+          const SizedBox(height: 12),
+          _buildSettingTile(
+            context,
+            icon: Icons.info_outline_rounded,
+            title: 'Easy',
+            subtitle: '版本 1.0.0 · 更新于 $kBuildTime',
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCloudSyncTile(BuildContext context) {
+  Widget _buildModuleSection(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.borderColor(context)),
+      ),
+      child: Column(
+        children: [
+          _buildModuleTile(
+            context,
+            icon: Icons.spa_rounded,
+            iconColor: AppTheme.primary,
+            title: '排便记录',
+            subtitle: '管理排便健康数据',
+            onTap: () => AppRouter.push(context, AppRouter.poop),
+            showDivider: true,
+          ),
+          _buildModuleTile(
+            context,
+            icon: Icons.restaurant_rounded,
+            iconColor: AppTheme.secondary,
+            title: '饮食记录',
+            subtitle: '即将推出',
+            enabled: false,
+            showDivider: true,
+          ),
+          _buildModuleTile(
+            context,
+            icon: Icons.directions_run_rounded,
+            iconColor: AppTheme.accent,
+            title: '运动记录',
+            subtitle: '即将推出',
+            enabled: false,
+            showDivider: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModuleTile(
+    BuildContext context, {
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+    bool enabled = true,
+    bool showDivider = false,
+  }) {
+    return Column(
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: enabled ? onTap : null,
+            borderRadius: showDivider
+                ? null
+                : const BorderRadius.vertical(bottom: Radius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: iconColor, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(
+                                color: enabled
+                                    ? null
+                                    : AppTheme.textMutedColor(context),
+                              ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.textMutedColor(context),
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (enabled)
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppTheme.textMutedColor(context),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (showDivider)
+          Divider(height: 1, indent: 66, color: AppTheme.borderColor(context)),
+      ],
+    );
+  }
+
+  Widget _buildNavigationTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+    bool showBadge = false,
+    String? badgeText,
+  }) {
+    return Material(
+      color: AppTheme.cardColor(context),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.borderColor(context)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: AppTheme.primary, size: 22),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        if (showBadge && badgeText != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryLight,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              badgeText,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppTheme.textMutedColor(context),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccountTile(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
         final isLoggedIn = authProvider.isLoggedIn;
         final userEmail = authProvider.userEmail;
-        final userId = authProvider.userId;
 
         if (isLoggedIn) {
           return Container(
@@ -143,96 +297,41 @@ class SettingsPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppTheme.borderColor(context)),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.cloud_done_rounded, color: AppTheme.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '已登录',
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            userEmail ?? '',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () => _confirmSignOut(context, authProvider),
-                      child: const Text('退出'),
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
-                // Widget config info
-                Text('小组件配置', style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                Icon(Icons.account_circle_rounded, color: AppTheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '在小组件配置中输入以下 User ID：',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        '已登录',
+                        style: Theme.of(context).textTheme.titleSmall,
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SelectableText(
-                              userId ?? '',
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    fontFamily: 'monospace',
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.copy_rounded, size: 20),
-                            onPressed: () {
-                              Clipboard.setData(
-                                ClipboardData(text: userId ?? ''),
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('已复制 User ID'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                      const SizedBox(height: 2),
+                      Text(
+                        userEmail ?? '',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
                   ),
+                ),
+                TextButton(
+                  onPressed: () => _confirmSignOut(context, authProvider),
+                  child: const Text('退出'),
                 ),
               ],
             ),
           );
         }
 
-        // Not logged in (should not happen with forced login, but keep as fallback)
+        // Not logged in (should not happen with forced login)
         return _buildSettingTile(
           context,
-          icon: Icons.cloud_outlined,
-          title: '云同步',
-          subtitle: '登录后可在小组件中显示数据',
-          onTap: () => AppRouter.push(context, AppRouter.auth),
+          icon: Icons.account_circle_outlined,
+          title: '登录',
+          subtitle: '登录以同步数据',
         );
       },
     );
@@ -253,7 +352,6 @@ class SettingsPage extends StatelessWidget {
             onPressed: () async {
               Navigator.of(dialogContext).pop();
               await authProvider.signOut();
-              // App will automatically show login page due to Consumer in main.dart
             },
             child: const Text('退出'),
           ),
@@ -324,96 +422,27 @@ class SettingsPage extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
-    VoidCallback? onTap,
-    bool isDestructive = false,
   }) {
-    final color = isDestructive
-        ? AppTheme.error
-        : AppTheme.textPrimaryColor(context);
-
-    return Material(
-      color: AppTheme.cardColor(context),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardColor(context),
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppTheme.borderColor(context)),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: color, size: 22),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleSmall?.copyWith(color: color),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-              if (onTap != null)
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppTheme.textMutedColor(context),
-                ),
-            ],
-          ),
-        ),
+        border: Border.all(color: AppTheme.borderColor(context)),
       ),
-    );
-  }
-
-  void _exportData(BuildContext context, PoopProvider provider) {
-    final data = provider.records.map((r) => r.toJson()).toList();
-    final jsonStr = const JsonEncoder.withIndent('  ').convert(data);
-
-    Clipboard.setData(ClipboardData(text: jsonStr));
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('已复制 ${provider.records.length} 条记录'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _confirmClearAll(BuildContext context, PoopProvider provider) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认清除'),
-        content: const Text('此操作将删除所有记录，且无法恢复。确定要继续吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              provider.clearAll();
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('已清除所有数据'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            child: Text('清除', style: TextStyle(color: AppTheme.error)),
+      child: Row(
+        children: [
+          Icon(icon, color: AppTheme.textPrimaryColor(context), size: 22),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 2),
+                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
           ),
         ],
       ),

@@ -78,12 +78,13 @@ class _RecordDialogState extends State<RecordDialog> {
   }
 
   Future<void> _selectTime(bool isStart) async {
-    final now = isStart ? _startTime : _endTime;
+    final current = isStart ? _startTime : _endTime;
+    final now = DateTime.now();
 
     await showCupertinoModalPopup(
       context: context,
       builder: (context) => Container(
-        height: 260,
+        height: 300,
         color: AppTheme.cardColor(context),
         child: Column(
           children: [
@@ -94,6 +95,14 @@ class _RecordDialogState extends State<RecordDialog> {
                   child: const Text('取消'),
                   onPressed: () => Navigator.pop(context),
                 ),
+                Text(
+                  isStart ? '选择开始时间' : '选择结束时间',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimaryColor(context),
+                  ),
+                ),
                 CupertinoButton(
                   child: const Text('完成'),
                   onPressed: () => Navigator.pop(context),
@@ -102,8 +111,9 @@ class _RecordDialogState extends State<RecordDialog> {
             ),
             Expanded(
               child: CupertinoDatePicker(
-                mode: CupertinoDatePickerMode.time,
-                initialDateTime: now,
+                mode: CupertinoDatePickerMode.dateAndTime,
+                initialDateTime: current,
+                maximumDate: now.add(const Duration(minutes: 1)),
                 use24hFormat: true,
                 onDateTimeChanged: (newDateTime) {
                   setState(() {
@@ -352,6 +362,22 @@ class _TimeItem extends StatelessWidget {
     required this.onTap,
   });
 
+  String _formatDateTime(DateTime dt) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateToCheck = DateTime(dt.year, dt.month, dt.day);
+
+    final timeStr = DateFormat('HH:mm').format(dt);
+
+    if (dateToCheck == today) {
+      return timeStr;
+    } else if (dateToCheck == today.subtract(const Duration(days: 1))) {
+      return '昨天 $timeStr';
+    } else {
+      return DateFormat('M/d HH:mm').format(dt);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -365,7 +391,7 @@ class _TimeItem extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            DateFormat('HH:mm').format(time),
+            _formatDateTime(time),
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ],
@@ -670,7 +696,7 @@ class _AmountSelector extends StatelessWidget {
   }
 }
 
-/// Color Selector
+/// Color Selector - Visual color grid with swatches
 class _ColorSelector extends StatelessWidget {
   final PoopColor selected;
   final TextEditingController customController;
@@ -684,77 +710,160 @@ class _ColorSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    // All predefined colors (excluding custom)
+    final predefinedColors = PoopColor.values
+        .where((c) => !c.isCustom)
+        .toList();
+
+    return Column(
       children: [
-        // Normal option
-        Expanded(
-          child: GestureDetector(
-            onTap: () => onChanged(PoopColor.normal),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: selected == PoopColor.normal
-                    ? AppTheme.primary
-                    : AppTheme.divider,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Center(
-                child: Text(
-                  '正常',
-                  style: TextStyle(
-                    color: selected == PoopColor.normal
-                        ? Colors.white
-                        : AppTheme.textSecondary,
-                    fontWeight: FontWeight.w600,
-                  ),
+        // Color grid - 4 columns
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1.2,
+          ),
+          itemCount: predefinedColors.length,
+          itemBuilder: (context, index) {
+            final color = predefinedColors[index];
+            final isSelected = color == selected;
+            final hasWarning = color.medicalNote != null;
+
+            return GestureDetector(
+              onTap: () => onChanged(color),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppTheme.primary : AppTheme.divider,
+                  borderRadius: BorderRadius.circular(10),
+                  border: isSelected
+                      ? Border.all(color: AppTheme.primary, width: 2)
+                      : null,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Color swatch
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: Color(color.colorValue),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isSelected
+                                  ? Colors.white.withValues(alpha: 0.5)
+                                  : Colors.black.withValues(alpha: 0.1),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        // Warning indicator for medical concern colors
+                        if (hasWarning)
+                          Positioned(
+                            top: -4,
+                            right: -4,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: AppTheme.warning,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppTheme.primary
+                                      : AppTheme.divider,
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Label
+                    Text(
+                      color.shortLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: isSelected ? Colors.white : AppTheme.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
 
-        // Custom option
-        Expanded(
-          child: GestureDetector(
-            onTap: () => onChanged(PoopColor.custom),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(
-                color: selected.isCustom ? AppTheme.primary : AppTheme.divider,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: selected.isCustom
-                  ? TextField(
-                      controller: customController,
-                      autofocus: true,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: '输入颜色',
-                        hintStyle: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
+        const SizedBox(height: 8),
+
+        // Custom color option
+        GestureDetector(
+          onTap: () => onChanged(PoopColor.custom),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: selected.isCustom ? AppTheme.primary : AppTheme.divider,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.edit_rounded,
+                  size: 18,
+                  color: selected.isCustom
+                      ? Colors.white
+                      : AppTheme.textSecondary,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: selected.isCustom
+                      ? TextField(
+                          controller: customController,
+                          autofocus: true,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '输入自定义颜色',
+                            hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        )
+                      : Text(
+                          '自定义',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: AppTheme.textPrimary,
+                          ),
                         ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                    )
-                  : Center(
-                      child: Text(
-                        '自定义',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                ),
+                if (selected.isCustom)
+                  const Icon(
+                    Icons.check_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+              ],
             ),
           ),
         ),

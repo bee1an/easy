@@ -18,7 +18,7 @@
 | [07-priorities.md](./07-priorities.md) | 优先级排序 |
 | [08-appendix.md](./08-appendix.md) | 附录 |
 | [09-authentication.md](./09-authentication.md) | 用户认证 |
-| [10-widget-shortcuts.md](./10-widget-shortcuts.md) | iOS Widget 与快捷指令 |
+| [10-unfollow.md](./10-unfollow.md) | 取消关注 |
 
 ---
 
@@ -40,4 +40,4 @@
 - 想了解新需求？→ [新需求](./05-new-features.md)
 - 想了解开发优先级？→ [优先级排序](./07-priorities.md)
 - 想了解认证流程？→ [用户认证](./09-authentication.md)
-- 想了解 Widget 和快捷指令？→ [iOS Widget 与快捷指令](./10-widget-shortcuts.md)
+- 想了解取消关注规范？→ [取消关注](./10-unfollow.md)

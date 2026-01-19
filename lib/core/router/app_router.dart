@@ -1,35 +1,61 @@
 import 'package:flutter/cupertino.dart';
-import 'package:easy/feature/home/home_page.dart';
-import 'package:easy/feature/history/history_page.dart';
-import 'package:easy/feature/settings/settings_page.dart';
-import 'package:easy/feature/settings/app_identity_page.dart';
+import 'package:easy/feature/shell/main_shell.dart';
 import 'package:easy/feature/splash/splash_screen.dart';
 import 'package:easy/feature/auth/auth_page.dart';
+import 'package:easy/feature/auth/forgot_password_page.dart';
+import 'package:easy/feature/stats/stats_page.dart';
+import 'package:easy/feature/settings/settings_page.dart';
+import 'package:easy/feature/poop/poop_detail_page.dart';
+import 'package:easy/feature/follow/follow_friends_page.dart';
 
 /// App Router Configuration
+///
+/// Routes:
+/// - /: Main shell with bottom navigation (Home, Profile)
+/// - /poop: Poop module detail page
+/// - /stats: Statistics page
+/// - /settings: Settings page
+/// - /auth: Authentication page
+/// - /forgot-password: Forgot password page
+/// - /follow: Follow friends page
 class AppRouter {
   AppRouter._();
 
   static const String home = '/';
-  static const String history = '/history';
+  static const String poop = '/poop';
+  static const String stats = '/stats';
   static const String settings = '/settings';
-  static const String appIdentity = '/app-identity';
   static const String auth = '/auth';
+  static const String forgotPassword = '/forgot-password';
+  static const String follow = '/follow';
 
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
-    switch (settings.name) {
+  static Route<dynamic> onGenerateRoute(RouteSettings routeSettings) {
+    switch (routeSettings.name) {
       case home:
-        return _buildRoute(const SplashScreen(child: HomePage()), isRoot: true);
-      case history:
-        return _buildRoute(const HistoryPage());
-      case AppRouter.settings:
+        return _buildRoute(
+          const SplashScreen(child: MainShell()),
+          isRoot: true,
+        );
+      case poop:
+        return _buildRoute(const PoopDetailPage());
+      case stats:
+        final args = routeSettings.arguments as Map<String, dynamic>?;
+        return _buildRoute(
+          StatsPage(
+            userId: args?['userId'] as String?,
+            userDisplayName: args?['userDisplayName'] as String?,
+          ),
+        );
+      case settings:
         return _buildRoute(const SettingsPage());
-      case AppRouter.appIdentity:
-        return _buildRoute(const AppIdentityPage());
       case auth:
         return _buildRoute(const AuthPage());
+      case forgotPassword:
+        return _buildRoute(const ForgotPasswordPage());
+      case follow:
+        return _buildRoute(const FollowFriendsPage());
       default:
-        return _buildRoute(const HomePage());
+        return _buildRoute(const MainShell());
     }
   }
 
@@ -49,8 +75,12 @@ class AppRouter {
   }
 
   /// Navigate to a named route
-  static Future<T?> push<T>(BuildContext context, String routeName) {
-    return Navigator.of(context).pushNamed<T>(routeName);
+  static Future<T?> push<T>(
+    BuildContext context,
+    String routeName, {
+    Map<String, dynamic>? arguments,
+  }) {
+    return Navigator.of(context).pushNamed<T>(routeName, arguments: arguments);
   }
 
   /// Pop current route

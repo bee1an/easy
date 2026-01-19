@@ -275,6 +275,20 @@ class _AuthPageState extends State<AuthPage> {
               ),
               const SizedBox(height: 16),
 
+              // Forgot password link (only show for login)
+              if (_isLogin)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed('/forgot-password'),
+                    child: Text(
+                      '忘记密码？',
+                      style: TextStyle(color: AppTheme.textMutedColor(context)),
+                    ),
+                  ),
+                ),
+
               // Toggle login/register
               TextButton(
                 onPressed: () {

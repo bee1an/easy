@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:easy/model/poop_record.dart';
 import 'package:easy/service/cloud_sync_service.dart';
@@ -94,11 +93,6 @@ class PoopProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// 导出数据为 JSON 字符串
-  Future<String> exportData() async {
-    return jsonEncode(_records.map((e) => e.toJson()).toList());
-  }
-
   /// 获取今日记录
   List<PoopRecord> getTodayRecords() {
     final today = DateTime.now().dateOnly;
@@ -110,6 +104,14 @@ class PoopProvider with ChangeNotifier {
   /// 获取今日次数
   int getTodayCount() {
     return getTodayRecords().length;
+  }
+
+  /// 获取指定日期的记录次数
+  int getRecordCountForDate(DateTime date) {
+    final targetDate = date.dateOnly;
+    return _records
+        .where((r) => r.startTime.dateOnly.isSameDay(targetDate))
+        .length;
   }
 
   /// 获取本周次数
